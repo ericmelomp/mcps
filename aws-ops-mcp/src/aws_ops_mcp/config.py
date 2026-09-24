@@ -12,6 +12,7 @@ class Account(BaseModel):
     account_id: str = Field(pattern=r"^\d{12}$")
     regions: list[str] = Field(min_length=1, max_length=50)
     profile: str | None = Field(default=None, min_length=1, max_length=128)
+    credentials_file: str | None = Field(default=None, min_length=1, max_length=4096)
     role_arn: str | None = Field(default=None, pattern=r"^arn:aws(?:-us-gov|-cn)?:iam::\d{12}:role/[\w+=,.@/-]+$", max_length=2048)
 
     @field_validator("regions")
