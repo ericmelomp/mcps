@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aws-ops-mcp"
+version = "0.1.0"
+description = "Compact, read-only AWS diagnostics via MCP"
+requires-python = ">=3.11"
+dependencies = ["boto3>=1.40,<2", "mcp>=1.28,<2", "pydantic>=2.11,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+aws-ops-mcp = "aws_ops_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

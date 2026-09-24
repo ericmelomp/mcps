@@ -1,0 +1,15 @@
+{
+  "accounts": {
+    "sandbox": {
+      "account_id": "000000000000",
+      "profile": "sandbox-readonly",
+      "regions": ["us-east-1"]
+    },
+    "sandbox-assumed": {
+      "account_id": "111111111111",
+      "profile": "source-sso",
+      "role_arn": "arn:aws:iam::111111111111:role/AIReadOnlyRole",
+      "regions": ["us-east-1"]
+    }
+  }
+}
