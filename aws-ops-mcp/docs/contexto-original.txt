@@ -1,0 +1,223 @@
+A solução consiste em criar um projeto chamado AWS Ops MCP, que funcionaria como uma camada intermediária entre as IAs que você utiliza e suas contas AWS.
+
+Hoje, quando você pede para uma IA investigar algum problema na AWS, normalmente ela precisa executar diversos comandos. Por exemplo, se você pedir para verificar por que o Karpenter não está criando nodes Spot, a IA pode precisar executar comandos do AWS CLI, kubectl, consultar NodePools, EC2NodeClasses, eventos do Kubernetes, logs do Karpenter, instâncias EC2, subnets, IAM e outras informações.
+
+Cada comando gera uma resposta que precisa voltar para a IA. Algumas dessas respostas possuem centenas ou milhares de linhas. Tudo isso entra no contexto da conversa e consome tokens. Além disso, a IA precisa gastar processamento para interpretar essas informações e decidir qual será o próximo comando.
+
+O AWS Ops MCP mudaria esse funcionamento.
+
+Em vez de permitir que a IA explore livremente a AWS, você criaria ferramentas específicas para operações que realiza frequentemente.
+
+Por exemplo, poderia existir uma ferramenta chamada karpenter_health.
+
+Quando você perguntasse:
+
+"Verifique se o Karpenter da JCA PROD está funcionando corretamente."
+
+A IA faria apenas uma chamada:
+
+karpenter_health(account="jca-prod", cluster="production")
+
+Internamente, o seu programa executaria todas as verificações necessárias. Ele poderia consultar Kubernetes, Karpenter, EC2, Spot, IAM, subnets e eventos. Porém, toda essa quantidade de dados seria processada localmente pelo seu código Python.
+
+No final, em vez de enviar milhares de linhas para a IA, o MCP poderia retornar algo pequeno como:
+
+status: degraded
+spot_nodes: 8
+on_demand_nodes: 3
+pending_pods: 2
+problem: spot_capacity_unavailable
+
+A IA precisaria interpretar apenas esse pequeno resultado.
+
+Esse é o principal mecanismo para reduzir o consumo de tokens.
+
+O projeto poderia ser desenvolvido principalmente em Python utilizando boto3 para comunicação com AWS. Para Kubernetes, você poderia utilizar o Kubernetes Python Client ou executar operações controladas contra o cluster.
+
+Para ambientes multi-account, o MCP utilizaria AWS STS e AssumeRole.
+
+Você teria uma configuração contendo suas contas, por exemplo JCA DEV, JCA HML, JCA PROD e outros clientes. Quando uma ferramenta fosse executada para determinada conta, o MCP faria AssumeRole automaticamente e criaria uma sessão boto3 naquela conta.
+
+Isso significa que você não precisaria ficar trocando profile ou credencial manualmente.
+
+Também seria interessante separar permissões.
+
+Você poderia ter uma role somente leitura, utilizada para inventário e diagnóstico, e outra role operacional para alterações.
+
+Por exemplo:
+
+AIReadOnlyRole para consultas.
+
+AIOpsRole para operações.
+
+As ferramentas de leitura poderiam ser executadas automaticamente. Já ferramentas que alteram infraestrutura poderiam exigir sua confirmação.
+
+Se você pedisse:
+
+"Verifique as instâncias EC2 da JCA PROD."
+
+A IA poderia executar automaticamente.
+
+Mas se pedisse:
+
+"Pare a instância i-123."
+
+O fluxo poderia exigir sua aprovação antes de chamar uma ferramenta como ec2_stop.
+
+Isso cria um guardrail importante, principalmente para produção.
+
+Outro ponto importante é evitar criar uma ferramenta MCP genérica como execute_aws_cli.
+
+Se você fizer isso, a IA continuará precisando decidir quais comandos executar, gerar os comandos e interpretar os outputs. Ou seja, você teria um MCP, mas boa parte do problema de consumo de tokens continuaria existindo.
+
+O ideal é criar ferramentas semânticas.
+
+Por exemplo:
+
+account_summary
+
+Retorna um resumo da conta.
+
+ec2_inventory
+
+Retorna somente informações relevantes das instâncias.
+
+ec2_health
+
+Verifica problemas relacionados às instâncias.
+
+eks_health
+
+Verifica a saúde geral de determinado cluster.
+
+karpenter_health
+
+Executa um diagnóstico completo do Karpenter.
+
+karpenter_spot_analysis
+
+Analisa especificamente problemas relacionados a Spot.
+
+network_validate
+
+Valida VPC, subnets, route tables, NAT Gateway, Internet Gateway e outros componentes.
+
+iam_validate
+
+Verifica problemas relacionados a permissões.
+
+terraform_drift
+
+Verifica diferenças entre Terraform e infraestrutura real.
+
+cost_summary
+
+Retorna um resumo de custos.
+
+A arquitetura ficaria aproximadamente assim:
+
+Você → IA → AWS Ops MCP → AWS/Kubernetes/Terraform.
+
+O MCP poderia ser utilizado por diferentes IAs. Essa é outra vantagem importante. A lógica operacional não ficaria presa ao ChatGPT, Claude ou qualquer outra ferramenta.
+
+Se amanhã você trocar a IA utilizada, suas ferramentas continuam existindo.
+
+Além do MCP, poderíamos criar uma pequena Skill.
+
+A diferença seria que o MCP contém as ferramentas, enquanto a Skill contém os procedimentos.
+
+Por exemplo, o MCP sabe executar karpenter_health.
+
+A Skill poderia ensinar:
+
+"Quando o usuário solicitar diagnóstico de Karpenter, primeiro execute karpenter_health. Se o problema estiver relacionado a Spot, execute karpenter_spot_analysis. Se estiver relacionado a IAM, execute iam_validate. Nunca altere um NodePool de produção sem autorização."
+
+Portanto:
+
+MCP = execução e coleta.
+
+Skill = procedimento e regras para utilização das ferramentas.
+
+Essa combinação seria particularmente interessante porque você usa diferentes IAs. Todas poderiam acessar o mesmo conjunto de ferramentas e seguir aproximadamente o mesmo procedimento operacional.
+
+Também existe uma segunda camada de economia.
+
+Algumas verificações nem precisam passar pela IA.
+
+Por exemplo, o próprio AWS Ops MCP poderia determinar programaticamente se um cluster está saudável.
+
+Um script Python poderia verificar que existem 10 nodes, todos Ready, nenhum pod Pending, Karpenter funcionando e nenhum evento crítico.
+
+Nesse caso, não existe motivo para mandar todos esses dados para uma IA analisar. O próprio código retorna simplesmente:
+
+status: healthy
+
+A IA só recebe essa informação.
+
+Você poderia levar isso ainda mais longe integrando o projeto com GitLab CI/CD.
+
+Jobs agendados poderiam executar verificações automaticamente:
+
+Terraform drift.
+
+Saúde dos clusters EKS.
+
+Problemas no Karpenter.
+
+Instâncias EC2.
+
+Custos anormais.
+
+Configurações de rede.
+
+Security Hub.
+
+GuardDuty.
+
+CloudTrail.
+
+O código faria a maior parte das validações sem utilizar LLM. Uma IA seria chamada apenas quando aparecesse uma situação que exigisse interpretação ou quando você estivesse conversando com ela.
+
+A estrutura do projeto poderia ser algo como:
+
+aws-ops-mcp
+
+Dentro dele teríamos módulos para autenticação e AssumeRole, contas AWS, EC2, EKS, Karpenter, networking, IAM, custos, Terraform e diagnósticos.
+
+Também teríamos uma configuração central das contas.
+
+Por exemplo, jca-prod poderia apontar para determinado Account ID, role e região. Assim, a IA não precisaria conhecer IDs de conta ou detalhes de autenticação.
+
+Você poderia simplesmente dizer:
+
+"Verifique o EKS da JCA PROD."
+
+O MCP saberia qual conta acessar, qual role assumir e qual região utilizar.
+
+No longo prazo, isso poderia se transformar em uma espécie de plataforma operacional pessoal para AWS.
+
+Você poderia dizer:
+
+"Faça um inventário da JCA PROD."
+
+"Verifique se existe drift."
+
+"Analise o Karpenter."
+
+"Verifique a conectividade dessa VPC."
+
+"Mostre as instâncias com problema."
+
+"Veja se existe algum problema de segurança."
+
+"Compare DEV e PROD."
+
+E a IA chamaria ferramentas pequenas e especializadas em vez de explorar todo o ambiente manualmente.
+
+O principal benefício, portanto, não é simplesmente "usar MCP". O benefício é mover o trabalho repetitivo e determinístico para código tradicional.
+
+Python, boto3, AWS APIs, Kubernetes e Terraform fazem a coleta e análise pesada.
+
+A IA fica responsável apenas por entender sua solicitação, escolher a ferramenta correta, interpretar um resultado pequeno e explicar ou decidir o próximo passo.
+
+Isso reduz consumo de tokens, diminui o tempo gasto investigando ambientes, padroniza diagnósticos, permite reutilizar a mesma automação entre diferentes IAs e ainda melhora bastante o controle de segurança sobre quais ações uma IA pode executar na AWS.
