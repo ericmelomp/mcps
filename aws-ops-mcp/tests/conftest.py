@@ -5,6 +5,8 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def offline(monkeypatch, tmp_path):
+    for name in ("AWS_SESSION_TOKEN", "AWS_SECURITY_TOKEN", "AWS_PROFILE", "AWS_DEFAULT_PROFILE"):
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "testing")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "testing")

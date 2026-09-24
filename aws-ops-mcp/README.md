@@ -4,7 +4,15 @@
 
 O objetivo é transformar investigações repetitivas em ferramentas reutilizáveis: menos resultados extensos na conversa e uma forma consistente de verificar seus ambientes.
 
-**Hoje:** inventário e verificações de saúde EC2, somente leitura, em contas configuradas. Primeira versão implementada e validada por 20 testes offline; conexão com conta AWS real e configuração do cliente MCP ainda pendentes.
+**Hoje:** inventário e verificações de saúde EC2, somente leitura, em contas configuradas. Suporte a importação assistida de credenciais temporárias de uma ou várias contas. Versão validada por 30 testes offline; validação em conta AWS real permanece pendente.
+
+## Uso simples: fornecer credenciais e pedir a análise
+
+Você informa o nome de cada conta, Access Key, Secret Key e Session Token, junto da análise e região desejadas. O agente verifica a identidade e prepara os profiles automaticamente. **Você não precisa editar arquivos nem cadastrar profiles manualmente.**
+
+Para várias contas, forneça um conjunto identificado para cada uma. Para renovar, forneça as novas credenciais com o mesmo nome. As credenciais ficam em arquivo local separado do repositório; o arquivo de contas contém apenas referências. Esse fluxo exige um agente com execução local e o servidor registrado no cliente.
+
+Veja [o fluxo completo, formato de entrada e renovação](docs/temporary-access.md). A importação facilita o acesso; serviços e análises ainda não implementados continuam dependendo de desenvolvimento.
 
 ## O que você pode pedir hoje
 
@@ -140,6 +148,10 @@ Saúde EC2 não inclui aplicações, conectividade, CloudWatch ou histórico. Co
 
 ## Instalação no Windows
 
+**Para usar sem depender de uma pasta clonada:** siga [carregar diretamente do GitHub com uvx](docs/github-install.md). O código é obtido do GitHub e executado localmente; contas e credenciais ficam fora do checkout.
+
+Os passos abaixo são a alternativa para desenvolvimento local.
+
 Python 3.11 ou superior. Execute dentro desta pasta:
 
 ```powershell
@@ -148,7 +160,7 @@ python -m venv .venv
 Copy-Item config\accounts.example.json accounts.local.json
 ```
 
-Edite `accounts.local.json` com aliases, IDs esperados, profiles já configurados e regiões permitidas. Os IDs do exemplo são fictícios. Remova a entrada de AssumeRole se não for utilizá-la. Não coloque chaves no arquivo.
+Na configuração manual, edite `accounts.local.json` com aliases, IDs esperados, profiles já configurados e regiões permitidas. Os IDs do exemplo são fictícios. Remova a entrada de AssumeRole se não for utilizá-la. Não coloque chaves no arquivo. No fluxo assistido de credenciais temporárias, o importador prepara essas entradas automaticamente.
 
 ```powershell
 $env:AWS_OPS_CONFIG = (Resolve-Path accounts.local.json).Path
@@ -161,7 +173,7 @@ O ambiente de desenvolvimento usa a linha MCP SDK 1.x com limite `<2`, sem migra
 
 ## Conectar a um cliente MCP local
 
-Configure transporte stdio com o executável Python do ambiente e os argumentos abaixo. Substitua os caminhos; a configuração exata depende do cliente. Nenhum cliente foi configurado automaticamente.
+Configure transporte stdio com o executável Python do ambiente e os argumentos abaixo. Substitua os caminhos; a configuração exata depende do cliente. O registro no cliente é uma etapa separada da instalação do pacote.
 
 ```json
 {

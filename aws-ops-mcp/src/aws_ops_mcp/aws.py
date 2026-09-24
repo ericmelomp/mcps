@@ -1,6 +1,7 @@
 """Explicit AWS identity check and safe error codes."""
 
 import boto3
+import botocore.session
 from botocore.config import Config
 from botocore.exceptions import (
     ClientError, NoCredentialsError, PartialCredentialsError, ProfileNotFound,
@@ -41,7 +42,12 @@ def ec2_client(account: Account, region: str):
     options = Config(connect_timeout=3, read_timeout=5,
                      retries={"total_max_attempts": 2, "mode": "standard"},
                      ignore_configured_endpoint_urls=True)
-    session = boto3.Session(profile_name=account.profile, region_name=region)
+    if account.credentials_file:
+        source = botocore.session.Session()
+        source.set_config_variable("credentials_file", account.credentials_file)
+        session = boto3.Session(profile_name=account.profile, region_name=region, botocore_session=source)
+    else:
+        session = boto3.Session(profile_name=account.profile, region_name=region)
     if account.role_arn:
         credentials = session.client("sts", config=options).assume_role(
             RoleArn=account.role_arn, RoleSessionName="aws-ops-mcp", DurationSeconds=900
