@@ -4,7 +4,11 @@
 
 O objetivo é transformar investigações repetitivas em ferramentas reutilizáveis: menos resultados extensos na conversa e uma forma consistente de verificar seus ambientes.
 
-**Hoje:** inventário e verificações de saúde EC2, somente leitura, em contas configuradas. Suporte a importação assistida de credenciais temporárias de uma ou várias contas. Versão validada por 30 testes offline; validação em conta AWS real permanece pendente.
+**Vers?o 0.3.0:** inventário e verificações EC2, mais investigação EKS via AWS CLI e bastion SSM: recursos AWS relacionados, componentes Kubernetes, correlações e logs de alvo explícito. Credenciais temporárias continuam com importação assistida. Fluxo EKS validado em um cluster real via AWS CLI e bastion SSM, com cobertura completa dos checks implementados. Isso não estende a prova a outros clusters nem à saúde funcional das aplicações. O cliente fixado no GitHub só recebe esta extensão após publicação e atualização do commit.
+
+Veja [configuração, cobertura e limites de EKS/SSM](docs/eks.md). As receitas consultam recursos, mas SSM executa comandos na bastion e gera registros remotos; as ferramentas correspondentes declaram esse efeito.
+
+**Extensão local 0.3.0:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 11 ferramentas no checkout. Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
 
 ## Uso simples: fornecer credenciais e pedir a análise
 
@@ -25,6 +29,9 @@ Após configurar uma conta com o alias `sandbox` e conectar um cliente de IA com
 | “Verifique os status checks das EC2 nessa conta e região.” | MCP avalia checks de instância, sistema, EBS quando disponível e eventos agendados | Falhas observadas e verificações que não puderam ser concluídas |
 | “Mostre mais instâncias do último inventário.” | IA consulta `evidence_get` usando o identificador retornado | Mais registros normalizados, sem refazer a coleta enquanto o cache estiver disponível |
 | “Repita a análise na conta de homologação.” | IA chama a ferramenta com outro alias configurado | Nova consulta isolada por conta e região, com AssumeRole quando configurado |
+| “Investigue os clusters EKS demo e demo-hml, incluindo a bastion.” | `eks_investigate` inicia coleta AWS CLI e receitas Kubernetes via SSM | ID para consultar progresso, achados e cobertura por componente |
+| “Liste os clusters EKS.” | `eks_inventory` inicia inventário regional | Resultado consultável por `eks_investigation_get` |
+| “Investigue os logs deste pod/container.” | `eks_logs` consulta um alvo explícito via SSM | Últimos 10 minutos, até 100 linhas/10.000 bytes, com redação de padrões comuns |
 
 A IA entende o pedido e escolhe a ferramenta. O MCP recebe parâmetros definidos, como conta e região. Cada consulta cobre uma conta e uma região; uma comparação entre ambientes exige chamadas separadas e interpretação pela IA.
 
@@ -126,14 +133,14 @@ Estas são possibilidades do projeto, **ainda não implementadas e sem ordem de 
 
 | Módulo futuro | Exemplos de análise |
 |---|---|
-| EKS / Karpenter | Nodes, pods pendentes e sinais relacionados ao provisionamento Spot |
+| EKS / Karpenter avançado | Histórico de métricas, provas ativas de rede e análises específicas de operadores adicionais |
 | RDS / ElastiCache / OpenSearch | Saúde e métricas específicas de cada serviço |
 | Custos | Gastos por conta/serviço e variações de custo |
 | Rede / IAM | Verificações de configuração e permissões dentro de um escopo definido |
 | Terraform | Verificação de drift com acesso ao projeto e ao estado |
 | Rotinas agendadas | Executar verificações determinísticas sem IA e encaminhar exceções para análise |
 
-**Limite atual:** esta versão consulta EC2. Não altera infraestrutura, não corrige falhas automaticamente, não monitora continuamente e não executa comandos genéricos. Não inclui métricas CloudWatch, diagnóstico completo de aplicações ou suporte universal à AWS.
+**Limite atual:** esta versão consulta EC2 e investiga EKS com receitas fixas executadas via SSM. Não corrige falhas automaticamente, não monitora continuamente e não expõe comandos genéricos. Não inclui métricas históricas CloudWatch, testes funcionais de aplicações ou suporte universal à AWS.
 
 ## Ferramentas
 
@@ -141,8 +148,15 @@ Estas são possibilidades do projeto, **ainda não implementadas e sem ordem de 
 |---|---|
 | `capabilities` | Serviços, análises e limites implementados; sem AWS |
 | `ec2_inventory(account, region)` | Totais observados por estado e até 20 instâncias |
+| `cloudfront_grpc_inspect(account, region, hostname, distribution_id, path)` | Descoberta e configura??o gRPC por behavior |
+| `elbv2_inspect(account, region, load_balancer_arn, dns_name)` | Listeners, regras host/path, protocolos e targets |
 | `ec2_health(account, region)` | Estado, status checks e eventos agendados EC2 |
 | `evidence_get(evidence_id, offset=0, limit=50)` | Página de evidências normalizadas da mesma sessão |
+| `eks_inventory(account, region)` | ID de inventário EKS assíncrono |
+| `eks_investigate(account, region, clusters)` | ID de investigação AWS e Kubernetes via bastion SSM |
+| `eks_investigation_get(investigation_id)` | Progresso ou resultado com evidências |
+| `eks_investigation_cancel(investigation_id)` | Pedido de cancelamento local/remoto |
+| `eks_logs(account, region, cluster, namespace, pod, container)` | ID de consulta de logs limitada ao alvo informado |
 
 Saúde EC2 não inclui aplicações, conectividade, CloudWatch ou histórico. Conta vazia é diferente de consulta sem permissão. Instância parada não é automaticamente um problema. Status checks indisponíveis em instâncias em execução geram cobertura parcial.
 

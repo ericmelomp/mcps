@@ -7,5 +7,6 @@ __pycache__/
 dist/
 build/
 accounts.local.json
+eks-bastions.local.json
 .env
 evidence/
