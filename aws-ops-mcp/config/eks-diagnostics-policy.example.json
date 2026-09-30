@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EKSDiagnostics",
+      "Effect": "Allow",
+      "Action": [
+        "eks:ListClusters", "eks:DescribeCluster", "eks:ListNodegroups", "eks:DescribeNodegroup",
+        "eks:ListAddons", "eks:DescribeAddon", "eks:ListFargateProfiles", "eks:DescribeFargateProfile",
+        "eks:ListAccessEntries", "eks:ListAssociatedAccessPolicies"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RelatedInfrastructureDiagnostics",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances", "ec2:DescribeInstanceStatus", "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups", "ec2:DescribeRouteTables", "ec2:DescribeNetworkAcls",
+        "ec2:DescribeVolumes", "autoscaling:DescribeAutoScalingGroups",
+        "elasticloadbalancing:DescribeLoadBalancers", "elasticloadbalancing:DescribeTargetGroups",
+        "elasticloadbalancing:DescribeTargetHealth", "iam:GetRole", "iam:ListAttachedRolePolicies",
+        "iam:ListRolePolicies", "ssm:DescribeInstanceInformation", "ssm:GetCommandInvocation", "ssm:CancelCommand"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RunDiagnosticsOnExplicitBastion",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": [
+        "arn:aws:ssm:us-east-1::document/AWS-RunShellScript",
+        "arn:aws:ec2:us-east-1:000000000000:instance/i-00000000000000001"
+      ]
+    }
+  ]
+}

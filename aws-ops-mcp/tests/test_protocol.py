@@ -14,7 +14,18 @@ def test_real_stdio_discovery_validation_and_safe_calls():
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert {tool.name for tool in tools} == {"capabilities", "ec2_inventory", "ec2_health", "evidence_get"}
+                assert {tool.name for tool in tools} == {"capabilities", "ec2_inventory", "ec2_health", "evidence_get",
+                    "eks_inventory", "eks_investigate", "eks_investigation_get", "eks_investigation_cancel", "eks_logs",
+                    "cloudfront_grpc_inspect", "elbv2_inspect"}
+                for name in ("cloudfront_grpc_inspect", "elbv2_inspect"):
+                    assert next(t for t in tools if t.name == name).annotations.readOnlyHint is True
+                    absent = await session.call_tool(name, {"account": "test", "region": "us-east-1"})
+                    assert json.loads(absent.content[0].text)["errors"][0]["code"] == "configuration_invalid"
+                assert next(t for t in tools if t.name == "eks_investigate").annotations.readOnlyHint is False
+                eks = await session.call_tool("eks_investigate", {"account": "test", "region": "us-east-1", "clusters": ["demo"]})
+                assert json.loads(eks.content[0].text)["errors"][0]["code"] == "configuration_invalid"
+                invalid_eks = await session.call_tool("eks_investigate", {"account": "test", "region": "us-east-1", "clusters": ["demo; touch /tmp/unsafe"]})
+                assert invalid_eks.isError
                 result = await session.call_tool("capabilities", {})
                 assert not result.isError
                 assert result.structuredContent is None

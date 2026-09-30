@@ -15,6 +15,7 @@ tool_timeout_sec = 75
 
 [mcp_servers.aws-ops-mcp.env]
 AWS_OPS_CONFIG = "C:/Users/SEU_USUARIO/.aws/aws-ops-mcp/accounts.json"
+AWS_OPS_EKS_CONFIG = "C:/Users/SEU_USUARIO/.aws/aws-ops-mcp/eks-bastions.json"
 ```
 
 Uma referência fixa de commit mantém a versão escolhida até a próxima atualização. Para atualizar, publicar/testar a nova versão e trocar o commit na configuração. Usar `@main` é possível, mas pode exigir `--refresh-package aws-ops-mcp` para atualizar o cache; não é a configuração fixa acima.
@@ -38,3 +39,7 @@ Não colocar segredos nos argumentos. Para o formato de entrada, consulte [acess
 O clone continua útil para desenvolver novos módulos, mas não participa da inicialização do MCP. Para a expansão assistida, alterar e testar o código no clone, publicar a versão e atualizar o commit configurado no cliente.
 
 Referência: [ambientes de ferramentas do uv](https://docs.astral.sh/uv/concepts/tools/).
+
+## Vers?o 0.3.0
+
+Inclui 11 ferramentas: EC2, EKS/SSM, CloudFront e ELB. O arquivo de bastions ? necess?rio para investiga??o interna EKS; aus?ncia de mapeamento produz cobertura parcial. GitHub fornece o c?digo, n?o hospeda um endpoint MCP HTTP. O servidor roda localmente pelo uvx, sem depender do checkout. Credenciais e configura??o operacional ficam fora do Git.

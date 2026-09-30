@@ -76,3 +76,65 @@
 - Concluído: entrypoint aws-ops-import-credentials adicionado para importação independente do checkout; instruções em docs/github-install.md e README.
 - Planejado: publicar atualização de credenciais temporárias e entrypoint, validar pacote publicado via stdio fora do projeto e trocar configuração Codex para uvx com commit fixo. Resultado final registrado no AGENTS.md da pasta de trabalho externa ao repositório.
 - Validação anterior mantida: 30 testes offline aprovados. Nenhuma credencial real ou consulta AWS nesta tarefa.
+
+### 2026-09-24 — Solicitação de diagnóstico EKS
+- Solicitação: usar AWS Ops MCP para verificar funcionamento do cluster EKS de produção; usuário pediu continuidade.
+- Concluído: capabilities chamado pelo conector MCP ativo; confirmou somente EC2 e quatro ferramentas. Inspecionada apenas lista de aliases/regiões da configuração ativa: nenhuma conta cadastrada.
+- Resultado: nenhuma análise de saúde EKS realizada; não há evidências para concluir saúde do cluster. Nenhuma chamada a recursos AWS ou Kubernetes realizada.
+- Pendente: receber acesso temporário identificado por conta, região e nome exato do cluster. Ampliar capacidades para EKS/Kubernetes e verificar autorização de leitura no cluster antes do diagnóstico. Não substituir saúde de Kubernetes por saúde EC2.
+
+### 2026-09-24 — Diagnóstico EKS parcial com acesso temporário
+- Solicitação: usuário forneceu credenciais temporárias e escopo EKS para análise de leitura.
+- Concluído: importador publicado validou identidade e registrou acesso fora do repositório. Consultas diretas às APIs AWS confirmaram alvo e estados de cluster, nodegroups e add-ons. MCP ativo permanece limitado a EC2; nenhum módulo EKS foi declarado implementado.
+- Limitação: endpoint Kubernetes privado sem conectividade TCP deste computador (timeout). Não foi possível verificar pods, nodes Ready, workloads ou eventos internos.
+- Evidências: relatório operacional por cliente salvo fora do repositório, em ~/.aws/aws-ops-mcp/reports. Credenciais e dados de cliente não registrados neste histórico.
+- Pendente: conectividade autorizada com a rede privada do cluster para completar análise Kubernetes; extensão EKS do MCP continua pendente. Nenhuma alteração AWS efetuada.
+
+### 2026-09-28 — Desenho da extensão EKS
+- Solicitação: prosseguir com implementação de análise EKS no MCP.
+- Concluído: consultados históricos, memória relevante e implementação atual; confirmadas quatro ferramentas e runner específico para EC2. Alteração preexistente neste histórico preservada.
+- Concluído: escrita e revisada proposta em docs/superpowers/specs/2026-09-28-eks-analysis-design.md, com alternativas, interfaces, cobertura, erros e validação.
+- Recomendação: inventário AWS e análise de um cluster com APIs AWS e Kubernetes; inacessibilidade Kubernetes resulta em cobertura parcial.
+- Pendente: revisão do escopo proposto antes de implementar conforme gate explícito da skill brainstorming. Nenhum código, acesso AWS, commit, push ou configuração de cliente alterado.
+
+### 2026-09-28 — Escopo EKS ampliado para bastion
+- Solicitação: investigar recursos EKS pela AWS CLI e acessar bastion para validar cluster e componentes internos.
+- Concluído: proposta reescrita com camadas AWS/Kubernetes, componentes, correlação, investigação de múltiplos clusters, execução remota e cobertura explícita. Consultada documentação oficial de update-kubeconfig e SSM SendCommand.
+- Decisão do usuário: escopo deve incluir investigação interna via bastion; somente controle AWS não satisfaz o pedido.
+- Pendente: identificar transporte de bastion (SSM, SSH ou ambos), finalizar contrato e implementar. Nenhuma conexão remota, alteração AWS, implementação ou publicação realizada nesta interação.
+
+### 2026-09-28 — Investigação EKS via SSM implementada localmente
+- Solicitação: investigar recursos EKS pela AWS CLI e validar cluster/componentes internos pela bastion. Usuário definiu SSM como transporte habitual; adotado SSM apenas.
+- Concluído: versão local 0.2.0 com eks_inventory, eks_investigate, eks_investigation_get, eks_investigation_cancel e eks_logs. Ferramentas EC2 e evidence_get preservadas.
+- Concluído: operações AWS CLI limitadas, validação STS/profile, mapeamento exato de bastion, receitas SSM fixas, identidade remota, kubeconfig temporário, coleta/análise Kubernetes, recursos AWS relacionados, evidências normalizadas, múltiplos clusters, progresso e cancelamento com término remoto não confirmado explícito.
+- Concluído: documentação da cobertura/exclusões e exemplos IAM/RBAC, plano e desenho atualizados; README do projeto e catálogo do repositório atualizados. Alterações preexistentes no histórico preservadas.
+- Verificado: 60 testes offline aprovados; pip check sem incompatibilidades; wheel 0.2.0 construído e validado fora do checkout por sessão MCP stdio com nove ferramentas e compilação da receita. Detalhes em docs/validation.md.
+- Limites: não há suporte universal a operadores, avaliação IAM efetiva, métricas históricas CloudWatch, provas ativas de rede ou remediação. Cobertura incompleta não gera diagnóstico saudável. Logs possuem redação best effort.
+- Pendente: configurar mapeamento das bastions e validar acesso real autorizado. Publicação e atualização do commit fixado no cliente continuam separadas. Nenhuma conta real consultada, permissão concedida, alteração de infraestrutura, configuração ativa, commit ou push nesta interação.
+
+### 2026-09-28 — Teste direto na conta e correções verificadas
+- Solicitação: usuário forneceu credenciais temporárias para teste real do MCP e solicitou continuidade.
+- Concluído: identidade validada com STS e credenciais renovadas via stdin fora do Git; descoberta AWS e configuração local do mapeamento de bastion SSM. Testado o servidor local por protocolo MCP stdio.
+- Concluído: reproduzida e corrigida falha de EndpointSlices com endpoints nulos. Corrigida perda de evidências por truncamento mediante transporte comprimido e paginação SSM com resourceVersion consistente e preservação de resultados parciais.
+- Verificado: 66 testes offline aprovados e wheel atualizado. Investigação real final em um cluster concluiu AWS, Kubernetes e correlações sem lacunas de coleta nem evidências truncadas. Resultado degraded corresponde a achados dos recursos, não a falha de execução.
+- Concluído: submissão SSM inicialmente não confirmada reconciliada com histórico remoto; término confirmado. Dados operacionais e relatório preservados exclusivamente fora do Git, em ~/.aws/aws-ops-mcp/reports. Detalhes técnicos genéricos em docs/validation.md.
+- Limites: teste real em um cluster; nenhuma remediação, alteração de infraestrutura, IAM/RBAC ou coleta de logs de aplicação. Cliente fixado no GitHub não atualizado.
+- Pendente: publicação e atualização do cliente. Sem commit/push.
+
+### 2026-09-29 — Extensão CloudFront/ELB para diagnóstico gRPC
+- Solicitação: ampliar as capacidades da MCP para investigar chamadas gRPC no caminho público; continuidade autorizada.
+- Concluído: versão local 0.3.0, com cloudfront_grpc_inspect e elbv2_inspect. Reutilizados autenticação STS, adaptador CLI restrito, deadline e cache de evidências. Preservada a extensão EKS/SSM preexistente e suas alterações locais.
+- Concluído: descoberta de distribuições/balanceadores, análise ordenada de behaviors, requisitos gRPC/POST/HTTP2/HTTPS, listeners, regras host/path, protocolos de targets e saúde. Segredos de headers/OIDC omitidos; cobertura e falhas explícitas.
+- Concluído: documentação docs/edge.md, exemplo IAM somente leitura e testes de regressão. Nenhuma política IAM aplicada.
+- Verificado: 86 testes offline aprovados; pip check e git diff --check aprovados. Wheel 0.3.0 construído com isolamento de build e validado por MCP stdio fora do checkout, com 11 ferramentas.
+- Validação operacional: tentativa de descoberta CloudFront pelo pacote local parou na autenticação expirada. Nenhuma configuração atual de infraestrutura foi coletada. Dados da tentativa permanecem fora do Git.
+- Limites: não há testes ativos DNS/TLS/RPC, avaliação WAF nem execução de regras de roteamento. Configuração compatível não comprova saúde funcional.
+- Pendências: renovar acesso para teste real, informar alvo da análise e publicar/atualizar cliente fixado no GitHub. Nenhum commit/push ou alteração de infraestrutura realizada.
+
+
+### 2026-09-30 ? Prepara??o da publica??o 0.3.0
+- Solicita??o: fazer push da MCP e utiliz?-la a partir do GitHub.
+- Conclu?do: conferidos origin/main e altera??es das extens?es EKS/SSM e CloudFront/ELB; documenta??o de capacidades e instala??o atualizada. 86 testes aprovados e pip check sem conflitos.
+- Valida??o operacional anterior: ferramentas CloudFront/ELB foram usadas em conta autorizada ap?s renova??o de acesso; evid?ncias operacionais permanecem fora do Git. Isso n?o comprova sa?de funcional.
+- Autorizado e planejado: commit/push normal para origin/main, teste do pacote obtido do GitHub fora do checkout e atualiza??o do commit fixado no cliente. N?o hospedar credenciais ou endpoint remoto no GitHub.
+- Resultado da publica??o/configura??o ser? registrado no hist?rico externo ao reposit?rio para manter a ?rvore publicada limpa.

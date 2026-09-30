@@ -1,0 +1,12 @@
+{
+  "bastions": [
+    {
+      "account": "sandbox",
+      "region": "us-east-1",
+      "cluster": "demo",
+      "instance_id": "i-00000000000000001",
+      "role_arn": null,
+      "expected_identity_arn": null
+    }
+  ]
+}
