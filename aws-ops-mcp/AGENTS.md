@@ -138,3 +138,19 @@
 - Valida??o operacional anterior: ferramentas CloudFront/ELB foram usadas em conta autorizada ap?s renova??o de acesso; evid?ncias operacionais permanecem fora do Git. Isso n?o comprova sa?de funcional.
 - Autorizado e planejado: commit/push normal para origin/main, teste do pacote obtido do GitHub fora do checkout e atualiza??o do commit fixado no cliente. N?o hospedar credenciais ou endpoint remoto no GitHub.
 - Resultado da publica??o/configura??o ser? registrado no hist?rico externo ao reposit?rio para manter a ?rvore publicada limpa.
+
+### 2026-10-01 — Proposta de cobertura WAF e IP de saída
+- Solicitação: incorporar à MCP as consultas usadas fora dela no diagnóstico recente.
+- Concluído: lidos históricos e inspecionados servidor, contratos, adaptador AWS e estado Git limpo na versão 0.3.0.
+- Proposta: ferramentas especializadas somente leitura para configuração WAFv2, correlação de logs S3/CloudWatch por janela e Request ID e busca de IP público em NAT Gateways/EIPs das contas configuradas. Reutilizar identidade validada, limites e cache de evidências; omitir headers sensíveis e payloads.
+- Alternativa avaliada: executor AWS genérico oferece amplitude, mas perde contratos e limites específicos; não recomendado.
+- Validação planejada: testes de correlação, paginação, limites, acesso negado, logs malformados, redação de segredos e descoberta MCP stdio.
+- Pendente: aprovação do desenho exigida pela skill brainstorming antes de implementar. Código, permissões AWS e configuração do cliente não alterados; sem commit/push.
+
+### 2026-10-01 — Extensão WAF e IP público implementada
+- Solicitação: usuário aprovou implementar as três capacidades propostas para incorporar consultas antes externas à MCP.
+- Concluído: versão 0.4.0 com waf_inspect, waf_logs_search e public_ip_lookup; 14 ferramentas totais. Sessão SDK autenticada reutilizada, mantendo a interface EC2. Incluídos documentação, política de leitura de exemplo e desenho/plano aprovado.
+- Verificado: 107 testes offline, incluindo descoberta/chamadas MCP stdio, paginação, fuso, correlação, acesso negado, limites, gzip e omissão de dados sensíveis. pip check e git diff --check passaram. Wheel isolado iniciou pelo uvx e anunciou 14 ferramentas; capabilities corresponde à descoberta.
+- Validação real: três ferramentas executadas por MCP stdio em conta autorizada. Inspeção WAF e consulta NAT/EIP concluídas; busca S3 correlacionou os dois IDs solicitados em 72 objetos/6034 registros, sem erros. Detalhes operacionais mantidos fora do repositório. CloudWatch validado por testes simulados, sem destino real disponível nesta investigação.
+- Limites: coleta somente leitura, sem Firehose/layout customizado ou expansão de grupos referenciados; ausência de resultado não comprova ausência de bloqueio nem propriedade do IP. Nenhuma permissão ou infraestrutura alterada.
+- Publicação planejada conforme autorização anterior: commit normal em origin/main e atualização do cliente fixado no GitHub. Resultado final registrado no histórico externo para manter checkout publicado limpo.

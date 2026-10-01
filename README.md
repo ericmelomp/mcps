@@ -8,4 +8,6 @@ Repositório de servidores MCP. Cada projeto tem sua própria pasta, configuraç
 
 O [README do AWS Ops MCP](aws-ops-mcp/README.md) explica exemplos de uso, economia medida, expansão assistida, possibilidades futuras e instalação.
 
-Extensão local AWS Ops MCP 0.3.0: inspeção gRPC CloudFront e ELB, total de 11 ferramentas. Consulte [cobertura e limites](aws-ops-mcp/docs/edge.md). Publicação/cliente atualizados separadamente.
+Extensão local AWS Ops MCP 0.3.0: inspeção gRPC CloudFront e ELB, ampliado para 14 ferramentas na versão 0.4.0. Consulte [cobertura e limites](aws-ops-mcp/docs/edge.md). Publicação/cliente atualizados separadamente.
+
+AWS Ops MCP 0.4.0 local: inspeção WAFv2, correlação de logs S3/CloudWatch e busca NAT/EIP. [Documentação](aws-ops-mcp/docs/security.md).

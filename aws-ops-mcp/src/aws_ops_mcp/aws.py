@@ -38,7 +38,7 @@ def error_code(exc: Exception) -> str:
     return "internal_error"
 
 
-def ec2_client(account: Account, region: str):
+def authenticated_session(account: Account, region: str):
     options = Config(connect_timeout=3, read_timeout=5,
                      retries={"total_max_attempts": 2, "mode": "standard"},
                      ignore_configured_endpoint_urls=True)
@@ -60,4 +60,9 @@ def ec2_client(account: Account, region: str):
     actual = session.client("sts", config=options).get_caller_identity()["Account"]
     if actual != account.account_id:
         raise AccountMismatch()
+    return session, options
+
+
+def ec2_client(account: Account, region: str):
+    session, options = authenticated_session(account, region)
     return session.client("ec2", config=options)

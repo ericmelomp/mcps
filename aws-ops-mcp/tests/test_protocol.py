@@ -16,11 +16,18 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                 tools = (await session.list_tools()).tools
                 assert {tool.name for tool in tools} == {"capabilities", "ec2_inventory", "ec2_health", "evidence_get",
                     "eks_inventory", "eks_investigate", "eks_investigation_get", "eks_investigation_cancel", "eks_logs",
-                    "cloudfront_grpc_inspect", "elbv2_inspect"}
+                    "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup"}
                 for name in ("cloudfront_grpc_inspect", "elbv2_inspect"):
                     assert next(t for t in tools if t.name == name).annotations.readOnlyHint is True
                     absent = await session.call_tool(name, {"account": "test", "region": "us-east-1"})
                     assert json.loads(absent.content[0].text)["errors"][0]["code"] == "configuration_invalid"
+                for name, extra in (
+                    ("waf_inspect", {"web_acl_arn": "arn:aws:wafv2:us-east-1:000000000000:global/webacl/demo/abc"}),
+                    ("waf_logs_search", {"web_acl_arn": "arn:aws:wafv2:us-east-1:000000000000:global/webacl/demo/abc", "start_time": "2026-01-01T00:00:00Z", "end_time": "2026-01-01T00:01:00Z", "request_ids": ["req"]}),
+                    ("public_ip_lookup", {"public_ip": "8.8.8.8"})):
+                    assert next(t for t in tools if t.name == name).annotations.readOnlyHint is True
+                    response = await session.call_tool(name, dict(account="test", region="us-east-1", **extra))
+                    assert json.loads(response.content[0].text)["errors"][0]["code"] == "configuration_invalid"
                 assert next(t for t in tools if t.name == "eks_investigate").annotations.readOnlyHint is False
                 eks = await session.call_tool("eks_investigate", {"account": "test", "region": "us-east-1", "clusters": ["demo"]})
                 assert json.loads(eks.content[0].text)["errors"][0]["code"] == "configuration_invalid"
