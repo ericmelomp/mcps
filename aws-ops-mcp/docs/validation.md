@@ -55,3 +55,9 @@ Limitação: nenhum smoke test em conta AWS real, login SSO real, cliente de IA 
 - Wheel 0.3.0 gerado com `pip wheel --no-deps --wheel-dir dist .`. A tentativa inicial sem isolamento não encontrou setuptools no ambiente virtual; build isolado concluiu.
 - Sessão MCP stdio com wheel no PYTHONPATH e cwd fora do checkout descobriu as 11 ferramentas e executou cloudfront_grpc_inspect. Autenticação expirada impediu coleta AWS; não houve validação de configuração real de CloudFront/ELB.
 - Cliente publicado/fixado no GitHub permanece separado desta validação local. Sem publicação ou atualização automática.
+
+## 2026-10-01 — Security 0.4.0
+
+107 testes offline aprovados, incluindo descoberta das 14 ferramentas por stdio e chamadas das novas ferramentas sem configuração, com erro estruturado. Dependências verificadas por pip check. Wheel construído com isolamento de build e iniciado via uvx, com 14 ferramentas e capabilities consistente.
+
+Validação operacional pela MCP das três ferramentas concluída com acesso autorizado: inspeção WAF, correlação de dois Request IDs em S3 e consulta NAT/EIP. Sem alterações de infraestrutura. Evidências operacionais permanecem externas ao Git. Backend CloudWatch validado somente com respostas simuladas; sem teste real nesta sessão.

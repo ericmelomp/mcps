@@ -1,0 +1,11 @@
+﻿{
+  "Version": "2012-10-17",
+  "Statement": [
+    {"Effect": "Allow", "Action": ["wafv2:GetWebACL", "wafv2:GetLoggingConfiguration"], "Resource": "arn:aws:wafv2:us-east-1:000000000000:global/webacl/example/*"},
+    {"Effect": "Allow", "Action": "wafv2:GetIPSet", "Resource": "arn:aws:wafv2:us-east-1:000000000000:global/ipset/example/*"},
+    {"Effect": "Allow", "Action": "s3:ListBucket", "Resource": "arn:aws:s3:::aws-waf-logs-example", "Condition": {"StringLike": {"s3:prefix": "AWSLogs/000000000000/WAFLogs/cloudfront/example/*"}}},
+    {"Effect": "Allow", "Action": "s3:GetObject", "Resource": "arn:aws:s3:::aws-waf-logs-example/AWSLogs/000000000000/WAFLogs/cloudfront/example/*"},
+    {"Effect": "Allow", "Action": "logs:FilterLogEvents", "Resource": "arn:aws:logs:us-east-1:000000000000:log-group:aws-waf-logs-example:*"},
+    {"Effect": "Allow", "Action": ["ec2:DescribeNatGateways", "ec2:DescribeAddresses"], "Resource": "*"}
+  ]
+}

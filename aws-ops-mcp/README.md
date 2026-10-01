@@ -4,11 +4,11 @@
 
 O objetivo é transformar investigações repetitivas em ferramentas reutilizáveis: menos resultados extensos na conversa e uma forma consistente de verificar seus ambientes.
 
-**Vers?o 0.3.0:** inventário e verificações EC2, mais investigação EKS via AWS CLI e bastion SSM: recursos AWS relacionados, componentes Kubernetes, correlações e logs de alvo explícito. Credenciais temporárias continuam com importação assistida. Fluxo EKS validado em um cluster real via AWS CLI e bastion SSM, com cobertura completa dos checks implementados. Isso não estende a prova a outros clusters nem à saúde funcional das aplicações. O cliente fixado no GitHub só recebe esta extensão após publicação e atualização do commit.
+**Versão 0.4.0:** inventário e verificações EC2, mais investigação EKS via AWS CLI e bastion SSM: recursos AWS relacionados, componentes Kubernetes, correlações e logs de alvo explícito. Credenciais temporárias continuam com importação assistida. Fluxo EKS validado em um cluster real via AWS CLI e bastion SSM, com cobertura completa dos checks implementados. Isso não estende a prova a outros clusters nem à saúde funcional das aplicações. O cliente fixado no GitHub só recebe esta extensão após publicação e atualização do commit.
 
 Veja [configuração, cobertura e limites de EKS/SSM](docs/eks.md). As receitas consultam recursos, mas SSM executa comandos na bastion e gera registros remotos; as ferramentas correspondentes declaram esse efeito.
 
-**Extensão local 0.3.0:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 11 ferramentas no checkout. Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
+**CloudFront/ELB:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 14 ferramentas no checkout. Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
 
 ## Uso simples: fornecer credenciais e pedir a análise
 
@@ -150,6 +150,9 @@ Estas são possibilidades do projeto, **ainda não implementadas e sem ordem de 
 | `ec2_inventory(account, region)` | Totais observados por estado e até 20 instâncias |
 | `cloudfront_grpc_inspect(account, region, hostname, distribution_id, path)` | Descoberta e configura??o gRPC por behavior |
 | `elbv2_inspect(account, region, load_balancer_arn, dns_name)` | Listeners, regras host/path, protocolos e targets |
+| `waf_inspect(account, region, web_acl_arn)` | Regras WAFv2, IP sets diretos e logging |
+| `waf_logs_search(...)` | Correlação de Request IDs em S3/CloudWatch, com limites |
+| `public_ip_lookup(account, region, public_ip)` | Associação de IPv4 a NAT Gateways/EIPs |
 | `ec2_health(account, region)` | Estado, status checks e eventos agendados EC2 |
 | `evidence_get(evidence_id, offset=0, limit=50)` | Página de evidências normalizadas da mesma sessão |
 | `eks_inventory(account, region)` | ID de inventário EKS assíncrono |
@@ -244,3 +247,7 @@ Siga o [procedimento de expansão assistida](docs/extension-workflow.md). O serv
 - [SDK MCP Python, linha 1.x](https://github.com/modelcontextprotocol/python-sdk/tree/v1.x)
 - [AWS DescribeInstanceStatus](https://docs.aws.amazon.com/boto3/latest/reference/services/ec2/client/describe_instance_status.html)
 - [AWS AssumeRole](https://docs.aws.amazon.com/boto3/latest/reference/services/sts/client/assume_role.html)
+
+## WAF e rede — versão 0.4.0
+
+`waf_inspect`, `waf_logs_search` e `public_ip_lookup` cobrem regras/IP sets/logging WAFv2, correlação de Request IDs em S3/CloudWatch e associação de IPv4 a NAT/EIP. Somente leitura, com limites e cobertura explícitos. [Uso e permissões](docs/security.md). A versão fixada no cliente GitHub depende de publicação e atualização separadas.

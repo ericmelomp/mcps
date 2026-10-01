@@ -64,3 +64,9 @@
 - Valida??o operacional anterior: ferramentas CloudFront/ELB foram usadas em conta autorizada ap?s renova??o de acesso; evid?ncias operacionais permanecem fora do Git. Isso n?o comprova sa?de funcional.
 - Autorizado e planejado: commit/push normal para origin/main, teste do pacote obtido do GitHub fora do checkout e atualiza??o do commit fixado no cliente. N?o hospedar credenciais ou endpoint remoto no GitHub.
 - Resultado da publica??o/configura??o ser? registrado no hist?rico externo ao reposit?rio para manter a ?rvore publicada limpa.
+
+### 2026-10-01 — AWS Ops MCP 0.4.0
+- Solicitação: ampliar a cobertura MCP para WAF/logs e localização de IP público; escopo aprovado.
+- Concluído: três ferramentas somente leitura, 14 ferramentas totais, documentação e testes no projeto aws-ops-mcp. Dados operacionais e credenciais permanecem fora do Git.
+- Verificado: 107 testes offline, pacote por MCP stdio e consultas reais das três ferramentas. CloudWatch validado somente por simulação.
+- Planejado: publicar em origin/main e atualizar cliente, conforme autorização anterior. Resultado externo ao checkout para preservar árvore publicada limpa.
