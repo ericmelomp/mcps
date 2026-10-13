@@ -4,11 +4,13 @@
 
 O objetivo é transformar investigações repetitivas em ferramentas reutilizáveis: menos resultados extensos na conversa e uma forma consistente de verificar seus ambientes.
 
-**Versão 0.4.0:** inventário e verificações EC2, mais investigação EKS via AWS CLI e bastion SSM: recursos AWS relacionados, componentes Kubernetes, correlações e logs de alvo explícito. Credenciais temporárias continuam com importação assistida. Fluxo EKS validado em um cluster real via AWS CLI e bastion SSM, com cobertura completa dos checks implementados. Isso não estende a prova a outros clusters nem à saúde funcional das aplicações. O cliente fixado no GitHub só recebe esta extensão após publicação e atualização do commit.
+**Base EKS:** inventário e verificações EC2, mais investigação EKS via AWS CLI e bastion SSM: recursos AWS relacionados, componentes Kubernetes, correlações e logs de alvo explícito. Credenciais temporárias continuam com importação assistida. Fluxo EKS validado em um cluster real via AWS CLI e bastion SSM, com cobertura completa dos checks implementados. Isso não estende a prova a outros clusters nem à saúde funcional das aplicações. O cliente fixado no GitHub só recebe esta extensão após publicação e atualização do commit.
 
 Veja [configuração, cobertura e limites de EKS/SSM](docs/eks.md). As receitas consultam recursos, mas SSM executa comandos na bastion e gera registros remotos; as ferramentas correspondentes declaram esse efeito.
 
-**CloudFront/ELB:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 14 ferramentas no checkout. Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
+**CloudFront/ELB:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 18 ferramentas no checkout (versão 0.7.0). Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
+
+**Rede (0.7.0):** `network_path_inspect` avalia rotas de ida e retorno, SGs, NACLs, peering e TGW entre ENIs. `network_flow_logs` consulta registros CloudWatch com alvo e janela explícitos. Veja [uso e limites](docs/network.md). Sem sondas ou alterações AWS.
 
 ## Uso simples: fornecer credenciais e pedir a análise
 

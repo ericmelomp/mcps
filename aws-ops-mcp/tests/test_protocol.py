@@ -16,7 +16,7 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                 tools = (await session.list_tools()).tools
                 assert {tool.name for tool in tools} == {"capabilities", "ec2_inventory", "ec2_health", "evidence_get",
                     "eks_inventory", "eks_investigate", "eks_investigation_get", "eks_investigation_cancel", "eks_logs",
-                    "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing"}
+                    "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs"}
                 for name in ("cloudfront_grpc_inspect", "elbv2_inspect"):
                     assert next(t for t in tools if t.name == name).annotations.readOnlyHint is True
                     absent = await session.call_tool(name, {"account": "test", "region": "us-east-1"})
@@ -34,6 +34,14 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                     assert next(t for t in tools if t.name == name).annotations.readOnlyHint is True
                     reply=await session.call_tool(name, arguments)
                     assert json.loads(reply.content[0].text)["errors"][0]["code"]=="configuration_invalid"
+                for name, arguments in (
+                    ("network_path_inspect", {"account":"test", "region":"us-east-1", "source_eni_id":"eni-00000000000000001", "destination_eni_id":"eni-00000000000000002", "port":443}),
+                    ("network_flow_logs", {"account":"test", "region":"us-east-1", "log_group_name":"/vpc/flows", "start_time":"2026-01-01T00:00:00Z", "end_time":"2026-01-01T00:10:00Z", "interface_id":"eni-00000000000000001"})):
+                    assert next(t for t in tools if t.name==name).annotations.readOnlyHint is True
+                    response=await session.call_tool(name,arguments)
+                    assert json.loads(response.content[0].text)["errors"][0]["code"]=="configuration_invalid"
+                bad_port=await session.call_tool("network_path_inspect", {"account":"test", "region":"us-east-1", "source_eni_id":"eni-00000000000000001", "destination_eni_id":"eni-00000000000000002", "port":0})
+                assert bad_port.isError
                 invalid_hours=await session.call_tool("eks_rightsizing", {"account":"test", "region":"us-east-1", "cluster":"demo", "namespace":"demo", "pod_name":"app", "hours":9999})
                 assert invalid_hours.isError
                 assert next(t for t in tools if t.name == "eks_investigate").annotations.readOnlyHint is False

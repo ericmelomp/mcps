@@ -188,3 +188,11 @@
 - Concluído: force-with-lease com SHA esperado publicou404fb8725787dc760b40691bef94f1d5e06c8a45; main local e origin/main alinhados. Config user.name/email LOCAL corrigida, configuração global preservada. uv.lock preexistente preservado fora do commit.
 - Validação: git diff dos trees antigo/novo vazio e autores conferidos. Não necessário repetir testes de código porque nenhum conteúdo funcional mudou.
 - Pendente: GitHub pode demorar para recalcular Contributors; pins externos que usam hashes anteriores precisam de atualização por mapping ou novo HEAD. Configuração do cliente MCP não foi alterada nesta correção.
+
+### 2026-10-13 — Network troubleshooting 0.7.0
+- Solicitação: implementar melhorias de troubleshooting de rede, testar e fazer push.
+- Concluído: network_path_inspect (ENIs IPv4, rotas bidirecionais, prefix lists, SGs, NACLs, peering/TGW) e network_flow_logs (CloudWatch, filtros explícitos, registros normalizados). Lacunas de TGW, NAT, portas de retorno e logging preservadas; nenhuma sonda ou alteração AWS.
+- Verificado: 174 testes offline passaram; build wheel/sdist e pip check aprovados. Smoke isolado do wheel em andamento antes da publicação.
+- Documentação e IAM opcional de exemplo atualizados; nenhuma política aplicada. Fixtures sintéticas sem dados de clientes ou credenciais.
+- Publicação autorizada: commit normal em origin/main após smoke e revisão final. uv.lock preexistente preservado fora do commit. Cliente instalado e validação AWS real não alterados.
+- Gate final: smoke do wheel0.7.0 isolado aprovado com18 ferramentas, contratos/read-only/inputs inválidos e chamadas sem configuração. Suite174 testes, build e dependências aprovados; sem acesso AWS real.
