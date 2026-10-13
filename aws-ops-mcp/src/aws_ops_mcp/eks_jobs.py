@@ -12,6 +12,7 @@ from .contracts import bounded, encoded, envelope
 from .eks_cli import CLI, CollectionError
 from .eks_collect import Collector, PROFILES, pick
 from .eks_insights import restart_snapshot, restart_delta
+from .eks_history import snapshot as health_snapshot, compare as health_compare
 
 
 EXCLUSIONS = ["application functional tests", "active network probes", "effective IAM authorization evaluation",
@@ -23,6 +24,7 @@ class Investigations:
         self.store, self.cli_factory, self.collector_factory, self.clock = store, cli_factory, collector_factory, clock
         self.jobs, self.lock = OrderedDict(), threading.RLock()
         self.restart_baselines = OrderedDict()
+        self.health_baselines = OrderedDict()
 
     def _expire(self):
         now = self.clock()
@@ -148,7 +150,7 @@ class Investigations:
                 job["items"].extend({"kind": "ssm_command", **event} for event in job["remote"].values())
                 for cluster in job['clusters']:
                     coverage_key = cluster + '/kubernetes.pods'
-                    if job['components'].get(coverage_key, {}).get('complete') and not job['components'][coverage_key].get('output_truncated') and not job['errors']:
+                    if job['components'].get(coverage_key, {}).get('complete') and not job['components'][coverage_key].get('output_truncated') and not job['errors'] and not job['stop'].is_set():
                         key = (job['account'], job['region'], cluster)
                         snapshot = restart_snapshot([i for i in job['items'] if i.get('cluster') == cluster])
                         previous = self.restart_baselines.get(key)
@@ -162,6 +164,25 @@ class Investigations:
                         self.restart_baselines.move_to_end(key)
                         while len(self.restart_baselines) > 20:
                             self.restart_baselines.popitem(last=False)
+                for cluster in job['clusters']:
+                    required = [job['components'].get(cluster+'/kubernetes.'+k, {}) for k in ('nodes','pods','events')]
+                    if all(c.get('complete') and not c.get('output_truncated') for c in required) and not job['errors'] and not job['stop'].is_set():
+                        key = (job['account'],job['region'],cluster)
+                        state = health_snapshot([i for i in job['items'] if i.get('cluster')==cluster])
+                        # Tuple keys are internal; repr is used only to measure cache size, never returned.
+                        size = len(repr(state).encode('utf-8'))
+                        previous = self.health_baselines.get(key)
+                        view = (health_compare(state,previous[1]) if previous and self.clock()-previous[0]<86400 else
+                                {'kind':'health_comparison','baseline_available':False,'scope':'first complete snapshot; in-memory history up to 24h'})
+                        if size <= 250000:
+                            self.health_baselines[key] = (self.clock(),state,size)
+                            self.health_baselines.move_to_end(key)
+                            while len(self.health_baselines)>20 or sum(v[2] for v in self.health_baselines.values())>5000000:
+                                self.health_baselines.popitem(last=False)
+                        else:
+                            view['history_not_retained'] = 'snapshot_size_limit'
+                        self._emit(job, {'kind':'component','cluster':cluster,'component':'kubernetes.health_history',
+                                         'items':[view],'findings':[],'coverage':{'complete':True,'observed':1}})
                 coverage = self._coverage(job)
                 job["evidence_id"] = self.store.put(job["account"], job["region"], job["items"], coverage)
                 if not job["evidence_id"]:

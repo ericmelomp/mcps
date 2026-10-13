@@ -166,3 +166,12 @@
 - Verificado:128 testes offline passaram, incluindo sessão MCP stdio e novos contratos; build wheel/sdist e pip check aprovados. Smoke do wheel isolado em execução antes da publicação.
 - Publicação autorizada: origin/main, GitHub ericmelomp/mcps, commit convencional após revisão. uv.lock preexistente excluído do commit. Nenhuma infraestrutura/IAM/RBAC/configuração do cliente alterada; validação real das novas features não executada.
 - Smoke isolado concluído: wheel0.5.0 fora do checkout validou MCP stdio,14 ferramentas, schema dos perfis, rejeição de input inválido e chamadas sem configuração. Nenhuma AWS real acessada no smoke.
+
+### 2026-10-13 — Operações EKS 0.6.0
+- Solicitação: implementar as cinco melhorias propostas, testar e fazer push.
+- Concluído: análise conservadora de retirada com PDB/replicas/volumes/AZ/taints/requests; ReplicaSets e projeções seguras de selectors/topologia; risco Spot por réplicas/node/AZ e indicadores de gerenciamento; histórico comparativo de nodes/probes/OOM/restarts, isolado por conta/região/cluster e limitado em memória.
+- Concluído: novas ferramentas read-only eks_network_dependency e eks_rightsizing. Rede inspeciona SGs reais de Redis/OpenSearch e ENI opcional sem modificar regras; métricas ContainerInsights de24–336h com paginação, cobertura e candidatos para revisão, nunca tuning automático.
+- Documentação: docs/eks-operations.md, desenho/plano aprovado, README e exemplos IAM/RBAC. Nenhuma política aplicada e nenhum dado real de cliente ou credencial versionado.
+- Verificação:148 testes completos anteriores passaram; teste adicional de isolamento/TTL e preservação de baseline parcial passou na rodada focada. Suite final após esse teste em execução. Build0.6.0, pip check e smoke de wheel isolado por MCP stdio com16 ferramentas aprovados.
+- Publicação autorizada: commit convencional em origin/main após gates finais. uv.lock preexistente preservado fora do commit. Sem validação AWS real das novas features ou atualização do cliente instalado.
+- Gate final:149 testes offline aprovados em8.61s; diff --check aprovado. Publicação normal autorizada para origin/main, sem alterações de infraestrutura.

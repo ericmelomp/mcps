@@ -3,6 +3,7 @@
 from .eks_cli import CollectionError
 from .eks_kubernetes import COMPONENTS, OPTIONAL, PATHS, OPTIONAL_CRDS, correlate
 from .eks_insights import summarize
+from .eks_readiness import assess
 from .eks_ssm import resolve_bastion, run_recipe, validate_bastion
 
 
@@ -12,8 +13,8 @@ def pick(value, fields):
 
 PROFILES = {
     "nodes": ("customresourcedefinitions", "nodes", "nodepools", "nodeclaims", "ec2nodeclasses", "node_metrics"),
-    "workloads": ("customresourcedefinitions", "nodes", "pods", "deployments", "statefulsets", "daemonsets", "events", "applications", "rollouts"),
-    "migration": ("customresourcedefinitions", "nodes", "pods", "deployments", "statefulsets", "daemonsets", "events", "services", "endpointslices", "persistentvolumeclaims", "persistentvolumes", "poddisruptionbudgets", "nodepools", "nodeclaims", "ec2nodeclasses", "node_metrics", "applications", "rollouts"),
+    "workloads": ("customresourcedefinitions", "nodes", "pods", "replicasets", "deployments", "statefulsets", "daemonsets", "events", "applications", "rollouts"),
+    "migration": ("customresourcedefinitions", "nodes", "pods", "replicasets", "deployments", "statefulsets", "daemonsets", "events", "services", "endpointslices", "persistentvolumeclaims", "persistentvolumes", "poddisruptionbudgets", "nodepools", "nodeclaims", "ec2nodeclasses", "node_metrics", "applications", "rollouts"),
 }
 
 class Collector:
@@ -219,7 +220,7 @@ class Collector:
                         scope="service endpoints, pod PVC dependencies and node readiness; samples do not establish absence")
             discovered = []
             for row in collected:
-                if row.get("kind") in {"pods", "deployments", "daemonsets"}:
+                if row.get("kind") in {"pods", "replicasets", "deployments", "daemonsets"}:
                     for marker, component in COMPONENTS.items():
                         if marker in row.get("name", ""):
                             discovered.append({"kind": "component", "component_type": component,
@@ -245,6 +246,10 @@ class Collector:
             self.record("kubernetes.capacity_migration", summarize(collected, complete_kinds),
                         complete={"nodes", "pods"} <= complete_kinds if self.profile != "nodes" else "nodes" in complete_kinds,
                         scope="Placement and instantaneous capacity; no scheduler simulation or drain authorization")
+            if self.profile in {"full", "migration"}:
+                readiness = assess(collected, complete_kinds)
+                self.record("kubernetes.withdrawal_resilience", readiness,
+                            complete=readiness[0]["complete"], scope="Conservative review evidence, never drain approval")
             if self.profile == "full":
                 self.dependencies(collected)
 

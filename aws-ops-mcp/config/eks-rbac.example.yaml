@@ -8,7 +8,7 @@ rules:
     resources: [nodes, pods, events, services, persistentvolumeclaims, persistentvolumes, resourcequotas, serviceaccounts]
     verbs: [get, list]
   - apiGroups: [apps]
-    resources: [deployments, statefulsets, daemonsets]
+    resources: [deployments, replicasets, statefulsets, daemonsets]
     verbs: [get, list]
   - apiGroups: [batch]
     resources: [jobs, cronjobs]

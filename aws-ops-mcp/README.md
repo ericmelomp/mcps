@@ -256,3 +256,8 @@ Siga o [procedimento de expansão assistida](docs/extension-workflow.md). O serv
 ## EKS 0.5.0: migra??o e capacidade
 
 Perfis opcionais `nodes`, `workloads` e `migration` em `eks_investigate`; `full` continua padr?o. Resumos de placement/capacidade, requests efetivos, contexto de alerts e status opcionais ArgoCD/Rollouts. [Contratos, cobertura e limita??es](docs/eks-evolution.md).
+
+
+## EKS 0.6.0: opera??o e resili?ncia
+
+Prontid?o conservadora para retirada de nodes, riscos Spot e compara??o de snapshots de sa?de. Novas ferramentas `eks_network_dependency` (SGs de Redis/OpenSearch) e `eks_rightsizing` (at?14 dias de m?tricas ContainerInsights). [Interfaces, permiss?es e limita??es](docs/eks-operations.md).

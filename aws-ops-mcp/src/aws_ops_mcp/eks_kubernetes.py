@@ -8,7 +8,7 @@ PATHS = {
     "nodes": "/api/v1/nodes", "pods": "/api/v1/pods", "events": "/api/v1/events",
     "services": "/api/v1/services", "persistentvolumeclaims": "/api/v1/persistentvolumeclaims",
     "persistentvolumes": "/api/v1/persistentvolumes", "resourcequotas": "/api/v1/resourcequotas",
-    "deployments": "/apis/apps/v1/deployments", "statefulsets": "/apis/apps/v1/statefulsets",
+    "replicasets": "/apis/apps/v1/replicasets", "deployments": "/apis/apps/v1/deployments", "statefulsets": "/apis/apps/v1/statefulsets",
     "daemonsets": "/apis/apps/v1/daemonsets", "jobs": "/apis/batch/v1/jobs",
     "cronjobs": "/apis/batch/v1/cronjobs", "horizontalpodautoscalers": "/apis/autoscaling/v2/horizontalpodautoscalers",
     "poddisruptionbudgets": "/apis/policy/v1/poddisruptionbudgets",
@@ -22,9 +22,20 @@ PATHS = {
     "node_metrics": "/apis/metrics.k8s.io/v1beta1/nodes", "pod_metrics": "/apis/metrics.k8s.io/v1beta1/pods",
 }
 
+POD_LABELS = {"app", "k8s-app", "app.kubernetes.io/name", "app.kubernetes.io/instance", "app.kubernetes.io/component", "pod-template-hash"}
 NODE_LABELS = {"eks.amazonaws.com/nodegroup", "eks.amazonaws.com/capacityType", "karpenter.sh/nodepool", "karpenter.sh/capacity-type", "workload-tier", "topology.kubernetes.io/zone", "node.kubernetes.io/instance-type"}
 SCHEDULING_KEYS = NODE_LABELS | {"kubernetes.io/arch", "kubernetes.io/os", "karpenter.k8s.aws/instance-size", "karpenter.k8s.aws/instance-cpu", "karpenter.k8s.aws/instance-memory"}
 OPTIONAL_CRDS = {"nodepools": "nodepools.karpenter.sh", "nodeclaims": "nodeclaims.karpenter.sh", "ec2nodeclasses": "ec2nodeclasses.karpenter.k8s.aws", "applications": "applications.argoproj.io", "rollouts": "rollouts.argoproj.io"}
+
+def selector_view(selector):
+    labels = selector.get("matchLabels", {})
+    expressions = selector.get("matchExpressions", [])
+    return {"match_labels": {k: v for k, v in labels.items() if k in POD_LABELS},
+            "match_expressions": [{k: e[k] for k in ("key", "operator", "values") if k in e}
+                                  for e in expressions if e.get("key") in POD_LABELS][:30],
+            "omitted": bool(set(labels)-POD_LABELS) or any(e.get("key") not in POD_LABELS for e in expressions),
+            "is_empty": not labels and not expressions}
+
 
 def scheduling(spec):
     # Allowlist only: custom selectors can contain tenant-sensitive labels.
@@ -36,7 +47,7 @@ def scheduling(spec):
     required = [[{k: e[k] for k in ("key", "operator", "values") if k in e}
                  for e in t.get("matchExpressions", []) if e.get("key") in SCHEDULING_KEYS][:30] for t in terms[:30]]
     return {"node_selector": selected, "tolerations": tolerations, "required_node_affinity": required,
-            "omitted_constraints": bool(set(spec.get("nodeSelector", {})) - SCHEDULING_KEYS) or any(e.get("key") not in SCHEDULING_KEYS for t in terms for e in t.get("matchExpressions", [])),
+            "omitted_constraints": bool(terms and any(t.get("matchFields") for t in terms)) or len(terms)>30 or any(len(t.get("matchExpressions", []))>30 for t in terms) or bool(set(spec.get("nodeSelector", {})) - SCHEDULING_KEYS) or any(e.get("key") not in SCHEDULING_KEYS for t in terms for e in t.get("matchExpressions", [])),
             "pod_affinity_present": bool(affinity.get("podAffinity") or affinity.get("podAntiAffinity")),
             "topology_spread_present": bool(spec.get("topologySpreadConstraints"))}
 
@@ -59,7 +70,7 @@ def normalize(kind, obj):
         item.update(phase=status.get("phase", "Unknown"), node=spec.get("nodeName"),
                     owners=[{"kind": o.get("kind"), "name": o.get("name")} for o in meta.get("ownerReferences", [])[:5]],
                     volumes=[v["persistentVolumeClaim"]["claimName"] for v in spec.get("volumes", []) if "persistentVolumeClaim" in v],
-                    labels={k: v for k, v in meta.get("labels", {}).items() if k in {"app", "k8s-app", "app.kubernetes.io/name"}})
+                    labels={k: v for k, v in meta.get("labels", {}).items() if k in POD_LABELS})
         item["containers"] = [{"name": c.get("name"), "ready": c.get("ready", False),
                                "restarts": c.get("restartCount", 0),
                                "waiting": c.get("state", {}).get("waiting", {}).get("reason"),
@@ -67,6 +78,7 @@ def normalize(kind, obj):
                                "last_finished_at": c.get("lastState", {}).get("terminated", {}).get("finishedAt"),
                                "last_terminated": c.get("lastState", {}).get("terminated", {}).get("reason")}
                               for c in status.get("initContainerStatuses", []) + status.get("containerStatuses", [])]
+        item["local_storage"] = any("hostPath" in v or "emptyDir" in v for v in spec.get("volumes", []))
         item["scheduling"] = scheduling(spec)
         item["uid"] = meta.get("uid")
         item["overhead"] = spec.get("overhead", {})
@@ -76,10 +88,13 @@ def normalize(kind, obj):
                               "init": c in spec.get("initContainers", []), "restart_policy": c.get("restartPolicy")}
                              for c in spec.get("initContainers", []) + spec.get("containers", [])]
     elif kind == "nodes":
-        item["labels"] = {k: v for k, v in meta.get("labels", {}).items() if k in NODE_LABELS}
+        item["labels"] = {k: v for k, v in meta.get("labels", {}).items() if k in SCHEDULING_KEYS}
         item.update(capacity=status.get("capacity", {}), allocatable=status.get("allocatable", {}),
                     provider_id=spec.get("providerID"), unschedulable=spec.get("unschedulable", False),
                     taints=spec.get("taints", []), node_info=status.get("nodeInfo", {}))
+    elif kind == "replicasets":
+        item["owners"] = [{"kind": o.get("kind"), "name": o.get("name")} for o in meta.get("ownerReferences", [])[:5]]
+        item["desired"] = spec.get("replicas", 1)
     elif kind in {"deployments", "statefulsets", "daemonsets"}:
         item["scheduling"] = scheduling(spec.get("template", {}).get("spec", {}))
         item.update(desired=status.get("desiredNumberScheduled", 0) if kind == "daemonsets" else spec.get("replicas", 1),
@@ -97,6 +112,8 @@ def normalize(kind, obj):
                     last_seen=obj.get("lastTimestamp") or obj.get("eventTime"),
                     object={k: obj.get("involvedObject", {}).get(k) for k in ("kind", "name", "namespace")})
     elif kind in {"persistentvolumeclaims", "persistentvolumes"}:
+        item["node_affinity"] = scheduling({"affinity": {"nodeAffinity": {"requiredDuringSchedulingIgnoredDuringExecution": spec.get("nodeAffinity", {}).get("required", {})}}})
+        item["access_modes"] = spec.get("accessModes", [])
         item.update(phase=status.get("phase"), storage_class=spec.get("storageClassName"),
                     volume=spec.get("volumeName"), capacity=status.get("capacity", spec.get("capacity", {})),
                     csi={k: spec.get("csi", {}).get(k) for k in ("driver", "volumeHandle")},
@@ -123,6 +140,10 @@ def normalize(kind, obj):
         item.update(min_replicas=spec.get("minReplicas", 1), max_replicas=spec.get("maxReplicas"),
                     current=status.get("currentReplicas"), desired=status.get("desiredReplicas"))
     elif kind == "poddisruptionbudgets":
+        item["generation"] = meta.get("generation")
+        item["observed_generation"] = status.get("observedGeneration")
+        item["selector"] = selector_view(spec.get("selector") or {})
+        item["selector_null"] = spec.get("selector") is None
         item.update(disruptions_allowed=status.get("disruptionsAllowed"), current_healthy=status.get("currentHealthy"),
                     desired_healthy=status.get("desiredHealthy"))
     elif kind in {"jobs", "cronjobs"}:
