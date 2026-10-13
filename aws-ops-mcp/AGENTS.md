@@ -175,3 +175,16 @@
 - Verificação:148 testes completos anteriores passaram; teste adicional de isolamento/TTL e preservação de baseline parcial passou na rodada focada. Suite final após esse teste em execução. Build0.6.0, pip check e smoke de wheel isolado por MCP stdio com16 ferramentas aprovados.
 - Publicação autorizada: commit convencional em origin/main após gates finais. uv.lock preexistente preservado fora do commit. Sem validação AWS real das novas features ou atualização do cliente instalado.
 - Gate final:149 testes offline aprovados em8.61s; diff --check aprovado. Publicação normal autorizada para origin/main, sem alterações de infraestrutura.
+
+### 2026-10-13 — Correção de identidade Git preparada
+- Solicitação: remover contributor emelo-cscale por suspeita de perfil errado.
+- Confirmado: seis commits publicados usam author/committer emelo@cscale.com.br, herdado do .gitconfig global. Commit inicial usa Eric Melo/108689764+ericmelomp@users.noreply.github.com. Não é determinado apenas pela conta que faz push.
+- Preparado: bundle de backup e reescrita de prévia em diretório temporário mcps-author-correction-20261013, seis commits com identidade pessoal e mesmos trees/datas/mensagens; main local e remoto não alterados. Head proposto404fb8725787dc760b40691bef94f1d5e06c8a45.
+- Pendências: aprovação específica de reescrita publicada/force-with-lease e configuração LOCAL da identidade pessoal; atualizar refs/pins do MCP após mudança. Nenhum force push ou git config executado.
+
+### 2026-10-13 — Identidade Git corrigida e histórico republicado
+- Autorização explícita: usuário confirmou reescrita dos seis commits, force-with-lease e configuração de identidade somente neste repo.
+- Concluído: remoto revalidado em2ee826c; backup before.bundle e mapping.json preservados em ~/.aws/aws-ops-mcp/reports/author-correction-20261013. Seis commits com author/committer Eric Melo,108689764+ericmelomp@users.noreply.github.com; datas/mensagens e todos os trees preservados. Commit inicial mantido.
+- Concluído: force-with-lease com SHA esperado publicou404fb8725787dc760b40691bef94f1d5e06c8a45; main local e origin/main alinhados. Config user.name/email LOCAL corrigida, configuração global preservada. uv.lock preexistente preservado fora do commit.
+- Validação: git diff dos trees antigo/novo vazio e autores conferidos. Não necessário repetir testes de código porque nenhum conteúdo funcional mudou.
+- Pendente: GitHub pode demorar para recalcular Contributors; pins externos que usam hashes anteriores precisam de atualização por mapping ou novo HEAD. Configuração do cliente MCP não foi alterada nesta correção.
