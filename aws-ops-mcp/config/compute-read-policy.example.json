@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "ObservedComputeScaling",
+    "Effect": "Allow",
+    "Action": [
+      "autoscaling:DescribeAutoScalingGroups",
+      "autoscaling:DescribeScalingActivities",
+      "ec2:DescribeInstances",
+      "compute-optimizer:GetEC2InstanceRecommendations"
+    ],
+    "Resource": "*"
+  }]
+}

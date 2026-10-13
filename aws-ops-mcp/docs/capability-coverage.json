@@ -1,11 +1,11 @@
 {
-  "version": "0.12.0",
+  "version": "0.13.0",
   "reviewed_on": "2026-10-13",
-  "tool_count": 38,
+  "tool_count": 40,
   "baseline_tools_preserved": 18,
   "validation": "offline_and_isolated_mcp_stdio",
   "live_aws_validation": false,
-  "publication": "published",
+  "publication": "release_prepared",
   "domains": [
     {
       "domain": "organizations",
@@ -61,13 +61,15 @@
       "implemented": [
         "ec2_inventory_health",
         "imds_ebs",
-        "optional_cpu_network_metrics"
+        "optional_cpu_network_metrics",
+        "targeted_asg_weighted_capacity_and_actual_lifecycle",
+        "targeted_ec2_compute_optimizer_recommendations"
       ],
       "missing": [
-        "asg",
-        "compute_optimizer",
         "memory_agent",
-        "rightsizing_proof"
+        "rightsizing_proof",
+        "asg_policies_schedules_warm_pools",
+        "optimizer_asg_ebs_lambda"
       ]
     },
     {
@@ -209,6 +211,5 @@
       ]
     }
   ],
-  "tests_passed": 280,
-  "code_revision": "817556e12e5a8a197361d6aa2be4a8e92f1c4668"
+  "tests_passed": 315
 }

@@ -241,3 +241,16 @@
 - Gates existentes:280 testes, build final exit0, pip check e smoke do wheel fora do checkout aprovados; sem mudanças funcionais posteriores.
 - Planejado: publicar expansão0.12.0 com38tools e catálogo explícito de lacunas; uv.lock preexistente fora do commit. Nenhuma atualização do cliente ou validação AWS real incluída neste envio.
 - Publicacao concluida: commit817556e12e5a8a197361d6aa2be4a8e92f1c4668 enviado normalmente para origin/main; ls-remote confirmou o mesmo SHA.35arquivos, versao0.12.0/38tools, identidade pessoal. Scan de credenciais e diff --check aprovados. uv.lock preexistente fora do commit. Catalogo atualizado para published em acompanhamento documental; nenhuma mudanca funcional adicional. Cliente instalado nao alterado.
+
+### 2026-10-13 ? Atualizacao do cliente Codex
+- Solicitacao: prosseguir apos publicacao da MCP.
+- Concluido: pin externo config.toml atualizado para 927f5826ff42ff7c8a86e722f4589351ab680eb5, com backup privado e alteracao apenas do SHA.
+- Validacao: smoke stdio pelo comando uvx configurado, pacote baixado do GitHub, descoberta das 38 ferramentas e chamadas seguras aprovadas (exit 0). Nenhuma consulta ou alteracao AWS.
+- Pendente: recarregar/reabrir Codex para a sessao ativa descobrir as novas ferramentas. Registro local; nenhum novo push funcional necessario.
+
+### 2026-10-13 - Continuacao compute 0.13.0
+- Solicitacao: prosseguir com novas features, preservando autorizacao anterior de implementacao/teste/push.
+- Concluido: autoscaling_assessment e compute_optimizer_assessment; 40 ferramentas, 38 anteriores preservadas. ASG ponderado, composicao EC2 real, atividades limitadas, recommendations EC2 com freshness/memoria/arquitetura.
+- Verificado:315 testes offline aprovados, build exit0, pip check e smoke do wheel isolado via stdio com40 ferramentas. Inputs/SDK parameters, scopes, dados ausentes, segredos e metodos mutaveis cobertos.
+- Limites: sem consultas AWS reais, IAM aplicado, resize, aceite funcional ou economia comprovada. ASG policies/warm pools e demais dominios continuam no catalogo. uv.lock preexistente preservado.
+- Planejado autorizado: commit feat(aws-ops-mcp): assess autoscaling and EC2 sizing recommendations; push normal origin/main. Resultado da publicacao externo ao checkout.

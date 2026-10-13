@@ -8,6 +8,7 @@ from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from . import costs, organization, topology, iam_roles, dns_config, resource_assessments, security_findings, observability, deployments, applications
+from . import autoscaling, optimizer
 from .aws import authenticated_session
 from .contracts import bounded, envelope
 from .ops_runtime import ReadContext, safe_error
@@ -24,7 +25,7 @@ class Platform:
         context = None
         try:
             collectors={'organization':organization,'cost':costs,'network':topology,'iam_role':iam_roles,'dns':dns_config,
-                        'security_findings':security_findings,'incident':observability}
+                        'security_findings':security_findings,'incident':observability,'autoscaling':autoscaling,'optimizer':optimizer}
             resources={kind:getattr(resource_assessments,kind) for kind in ('compute','database','storage','backup')}
             resources.update({kind:getattr(deployments,kind) for kind in ('cloudformation','ecs')})
             resources.update({kind:getattr(applications,kind) for kind in ('serverless','analytics','ai')})
@@ -33,6 +34,8 @@ class Platform:
             if analysis == 'cost':
                 costs.validate(params['start_date'], params['end_date'],
                                params.get('metric', 'UnblendedCost'), params.get('granularity', 'MONTHLY'))
+            elif analysis=='optimizer':optimizer.validate(params.get('instance_ids',[]),params.get('maximum_age_hours',168))
+            elif analysis=='autoscaling':autoscaling.validate(params.get('group_name',''))
             elif analysis=='network':topology.validate(params.get('vpc_ids',[]))
             elif analysis=='iam_role':iam_roles.validate(params.get('role_name',''))
             elif analysis=='dns':dns_config.validate(params.get('hosted_zone_id',''),params.get('record_name',''))

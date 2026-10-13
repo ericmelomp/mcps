@@ -49,9 +49,11 @@ def capabilities() -> str:
     result = envelope()
     result["summary"] = {
         "tools": ["capabilities", "ec2_inventory", "ec2_health", "evidence_get", "eks_inventory", "eks_investigate",
-                  "eks_investigation_get", "eks_investigation_cancel", "eks_logs", "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs", "organization_summary", "cost_summary", "ops_investigate", "ops_investigation_get", "network_topology", "dns_diagnostics", "iam_policy_analyze", "iam_role_assessment", "compute_assessment", "database_assessment", "s3_assessment", "backup_assessment", "security_findings_summary", "incident_diagnostics", "terraform_plan_analysis", "cloudformation_health", "ecs_service_assessment", "serverless_assessment", "analytics_assessment", "ai_resource_assessment"],
+                  "eks_investigation_get", "eks_investigation_cancel", "eks_logs", "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs", "organization_summary", "cost_summary", "ops_investigate", "ops_investigation_get", "network_topology", "dns_diagnostics", "iam_policy_analyze", "iam_role_assessment", "compute_assessment", "database_assessment", "s3_assessment", "backup_assessment", "security_findings_summary", "incident_diagnostics", "terraform_plan_analysis", "cloudformation_health", "ecs_service_assessment", "serverless_assessment", "analytics_assessment", "ai_resource_assessment", "autoscaling_assessment", "compute_optimizer_assessment"],
         "security_limits": "45s collection deadline plus bounded in-flight API time; 24h log window, 100 pages/API, 1000 objects/items, 32 MiB compressed, 16 MiB expanded/object, 100000 records. Partial results require narrower queries. No historical completeness guarantee.",
-        "services": {"organizations": ["accounts_and_ou_tree", "observed_scp_rcp_attachments_and_inheritance"],
+        "services": {"autoscaling": ["targeted_weighted_capacity", "actual_ec2_lifecycle", "recent_activity_sample"],
+                     "compute_optimizer": ["targeted_ec2_recommendations", "freshness_and_compatibility"],
+                     "organizations": ["accounts_and_ou_tree", "observed_scp_rcp_attachments_and_inheritance"],
                      "cost_explorer": ["service_costs_explicit_period", "decimal_currency_totals", "explicit_billing_scope"],
                      "wafv2": ["web_acl_rules_and_ip_sets", "logging_configuration", "s3_and_cloudwatch_request_correlation"],
                      "iam": ["static_policy_signals", "explicit_role_trust_attached_inline_boundary_observations"],
@@ -559,6 +561,34 @@ def public_ip_lookup(account: Alias, region: Region,
     """
     from .contracts import encoded
     return encoded(security.query(account, region, "ip", public_ip=public_ip)).decode()
+
+
+@mcp.tool(structured_output=False, annotations=annotations)
+def autoscaling_assessment(account: Alias, region: Region,
+    group_name: Annotated[str, Field(min_length=1, max_length=255)]) -> str:
+    """Assess one ASG's bounds, weighted capacity, suspended processes and actual EC2 capacity types.
+
+    Samples at most 20 scaling activities and reports those started in the last 24 hours.
+    Truncation and missing EC2 data are partial evidence. Does not assess Karpenter pools,
+    warm pools, scaling policies, workload health or prove scaling failure root cause.
+    """
+    from .contracts import encoded
+    return encoded(platform.query(account, region, 'autoscaling', group_name=group_name)).decode()
+
+
+@mcp.tool(structured_output=False, annotations=annotations)
+def compute_optimizer_assessment(account: Alias, region: Region,
+    instance_ids: Annotated[list[str], Field(min_length=1, max_length=5)],
+    maximum_age_hours: Annotated[int, Field(ge=1, le=8760)] = 168) -> str:
+    """Inspect AWS EC2 sizing recommendations for up to five explicitly selected instances.
+
+    Reports freshness, memory evidence, platform differences and up to three candidate types.
+    Does not enroll accounts, resize instances or establish application performance or savings.
+    Missing recommendations/resource errors mean incomplete evidence, never optimized by default.
+    """
+    from .contracts import encoded
+    return encoded(platform.query(account, region, 'optimizer', instance_ids=instance_ids,
+        maximum_age_hours=maximum_age_hours)).decode()
 
 
 def main():

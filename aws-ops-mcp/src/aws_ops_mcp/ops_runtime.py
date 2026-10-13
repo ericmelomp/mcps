@@ -12,6 +12,8 @@ from .config import resolve, ConfigurationError
 from .eks_cli import CollectionError
 
 OPERATIONS = {
+    'compute-optimizer': {'get_ec2_instance_recommendations'},
+    'autoscaling': {'describe_auto_scaling_groups', 'describe_scaling_activities'},
     'organizations': {'describe_organization', 'list_accounts', 'list_roots',
                       'list_organizational_units_for_parent', 'list_children', 'list_policies_for_target'},
     'ce': {'get_cost_and_usage'},
