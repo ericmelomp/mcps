@@ -240,3 +240,4 @@
 - Usuário confirmou “Pode fazer” após perguntar pelo push. Revisão/commit/push normal em origin/main autorizados; identidade pessoal local mantida.
 - Gates existentes:280 testes, build final exit0, pip check e smoke do wheel fora do checkout aprovados; sem mudanças funcionais posteriores.
 - Planejado: publicar expansão0.12.0 com38tools e catálogo explícito de lacunas; uv.lock preexistente fora do commit. Nenhuma atualização do cliente ou validação AWS real incluída neste envio.
+- Publicacao concluida: commit817556e12e5a8a197361d6aa2be4a8e92f1c4668 enviado normalmente para origin/main; ls-remote confirmou o mesmo SHA.35arquivos, versao0.12.0/38tools, identidade pessoal. Scan de credenciais e diff --check aprovados. uv.lock preexistente fora do commit. Catalogo atualizado para published em acompanhamento documental; nenhuma mudanca funcional adicional. Cliente instalado nao alterado.

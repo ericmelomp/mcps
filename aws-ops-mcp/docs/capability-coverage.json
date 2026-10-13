@@ -5,7 +5,7 @@
   "baseline_tools_preserved": 18,
   "validation": "offline_and_isolated_mcp_stdio",
   "live_aws_validation": false,
-  "publication": "authorized_pending_push",
+  "publication": "published",
   "domains": [
     {
       "domain": "organizations",
@@ -209,5 +209,6 @@
       ]
     }
   ],
-  "tests_passed": 280
+  "tests_passed": 280,
+  "code_revision": "817556e12e5a8a197361d6aa2be4a8e92f1c4668"
 }
