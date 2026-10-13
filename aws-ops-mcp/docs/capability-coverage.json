@@ -1,0 +1,213 @@
+{
+  "version": "0.12.0",
+  "reviewed_on": "2026-10-13",
+  "tool_count": 38,
+  "baseline_tools_preserved": 18,
+  "validation": "offline_and_isolated_mcp_stdio",
+  "live_aws_validation": false,
+  "publication": "authorized_pending_push",
+  "domains": [
+    {
+      "domain": "organizations",
+      "status": "partial",
+      "implemented": [
+        "accounts_ou_tree",
+        "observed_scp_rcp_inheritance"
+      ],
+      "missing": [
+        "effective_policy_analysis",
+        "control_tower",
+        "landing_zone_baselines"
+      ]
+    },
+    {
+      "domain": "network",
+      "status": "partial",
+      "implemented": [
+        "eni_ipv4_path",
+        "flow_logs",
+        "topology_ipv4_ipv6",
+        "route53_configuration",
+        "vpn_dx_metadata"
+      ],
+      "missing": [
+        "runtime_dns",
+        "full_tgw_propagation",
+        "cloud_wan",
+        "network_firewall",
+        "ipam",
+        "bgp_path_proof"
+      ]
+    },
+    {
+      "domain": "security",
+      "status": "partial",
+      "implemented": [
+        "waf",
+        "static_iam_role_policy_signals",
+        "guardduty_securityhub_findings",
+        "cloudtrail_management_timeline"
+      ],
+      "missing": [
+        "effective_iam",
+        "kms_assessment",
+        "config_inspector_macie",
+        "organization_security_posture"
+      ]
+    },
+    {
+      "domain": "compute",
+      "status": "partial",
+      "implemented": [
+        "ec2_inventory_health",
+        "imds_ebs",
+        "optional_cpu_network_metrics"
+      ],
+      "missing": [
+        "asg",
+        "compute_optimizer",
+        "memory_agent",
+        "rightsizing_proof"
+      ]
+    },
+    {
+      "domain": "storage_backup_dr",
+      "status": "partial",
+      "implemented": [
+        "s3_configuration",
+        "ebs_encryption",
+        "aws_backup_point_age"
+      ],
+      "missing": [
+        "efs_fsx",
+        "vault_backup_policies",
+        "restore_tests",
+        "business_rto_rpo"
+      ]
+    },
+    {
+      "domain": "databases",
+      "status": "partial",
+      "implemented": [
+        "rds_aurora_dynamodb_elasticache_configuration"
+      ],
+      "missing": [
+        "performance_metrics",
+        "sql_connectivity",
+        "documentdb_neptune_redshift_memorydb",
+        "restore_failover"
+      ]
+    },
+    {
+      "domain": "containers",
+      "status": "partial",
+      "implemented": [
+        "eks_investigation_migration_spot_requests_metrics_history",
+        "ecs_service_task_metadata"
+      ],
+      "missing": [
+        "full_cluster_security",
+        "ecr_scanning",
+        "pod_cost_allocation",
+        "application_acceptance"
+      ]
+    },
+    {
+      "domain": "iac_cicd",
+      "status": "partial",
+      "implemented": [
+        "terraform_plan_signals",
+        "cloudformation_status",
+        "argocd_rollout_metadata"
+      ],
+      "missing": [
+        "live_terraform_drift",
+        "pipeline_oidc_runners",
+        "stacksets",
+        "full_compliance"
+      ]
+    },
+    {
+      "domain": "observability",
+      "status": "partial",
+      "implemented": [
+        "bounded_eks_waf_flow_logs",
+        "alarm_snapshot",
+        "management_event_timeline"
+      ],
+      "missing": [
+        "logs_insights_traces",
+        "aws_health",
+        "confirmed_root_cause",
+        "slo_budget"
+      ]
+    },
+    {
+      "domain": "finops",
+      "status": "partial",
+      "implemented": [
+        "service_cost_periods_decimal_currencies"
+      ],
+      "missing": [
+        "cost_anomaly",
+        "savings_plans_ri",
+        "idle_proof",
+        "resource_attribution",
+        "proven_savings"
+      ]
+    },
+    {
+      "domain": "serverless",
+      "status": "partial",
+      "implemented": [
+        "lambda_configuration_concurrency",
+        "sqs_attributes_dlq_metadata"
+      ],
+      "missing": [
+        "event_integration_map",
+        "apigateway_stepfunctions_sns_kinesis",
+        "retry_idempotency_runtime"
+      ]
+    },
+    {
+      "domain": "analytics",
+      "status": "partial",
+      "implemented": [
+        "glue_configuration_recent_runs"
+      ],
+      "missing": [
+        "athena_redshift_emr_msk_lakeformation_quick",
+        "data_pipeline_acceptance"
+      ]
+    },
+    {
+      "domain": "ai_ml",
+      "status": "partial",
+      "implemented": [
+        "bedrock_knowledge_base_metadata",
+        "sagemaker_endpoint_configuration"
+      ],
+      "missing": [
+        "agents_agentcore_guardrails",
+        "model_access",
+        "inference_costs",
+        "training_rag_quality"
+      ]
+    },
+    {
+      "domain": "architecture_migration",
+      "status": "partial",
+      "implemented": [
+        "eks_migration_signals",
+        "network_dependency_observations"
+      ],
+      "missing": [
+        "full_cross_service_dependency_graph",
+        "well_architected_assessment",
+        "mgn_dms",
+        "architecture_comparison"
+      ]
+    }
+  ],
+  "tests_passed": 280
+}

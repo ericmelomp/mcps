@@ -196,3 +196,47 @@
 - Documentação e IAM opcional de exemplo atualizados; nenhuma política aplicada. Fixtures sintéticas sem dados de clientes ou credenciais.
 - Publicação autorizada: commit normal em origin/main após smoke e revisão final. uv.lock preexistente preservado fora do commit. Cliente instalado e validação AWS real não alterados.
 - Gate final: smoke do wheel0.7.0 isolado aprovado com18 ferramentas, contratos/read-only/inputs inválidos e chamadas sem configuração. Suite174 testes, build e dependências aprovados; sem acesso AWS real.
+
+### 2026-10-13 — Revalidacao de Contributors
+- Solicitacao: contributor emelo-cscale ainda aparece na interface GitHub.
+- Concluido: remoto possui somente main, sem tags; nove commits usam identidade pessoal, sem trailers da identidade antiga. API GitHub confirma default main, todos os autores ericmelomp e lista de contributors contendo somente ericmelomp (9).
+- Resultado: backend ja recalculado; captura indica interface/cache desatualizado. Nenhuma nova reescrita ou alteracao remota executada. Orientacao: recarregar; se persistir apos cerca de24h, suporte GitHub conforme documentacao oficial.
+
+### 2026-10-13 — Proposta de expansão AWS Ops por módulos
+- Solicitação: implementar especificação completa de28 seções, preservando projeto e ferramentas.
+- Concluído: arquivo completo lido (substitui envio truncado), arquitetura/auth/contratos/cache/jobs e18 ferramentas inspecionados; matriz de lacunas e desenho em docs/superpowers/specs/2026-10-13-aws-platform-expansion-design.md.
+- Proposta: expansão modular, fundação compatível e primeira fatia Organizations/cost_summary, seguida de rede/IAM e demais domínios. Sem duplicação dos perfis EKS.
+- Pendente: aprovação do desenho conforme brainstorming. Nenhuma implementação, teste novo, consulta AWS, commit/push ou mudança do cliente executada. Alteração preexistente deste histórico e uv.lock preservados.
+
+### 2026-10-13 — Etapa1 da expansão AWS Ops 0.8.0
+- Autorização: usuário respondeu “Manda bala” ao desenho por etapas e início pela etapa1.
+- Concluído: organization_summary, cost_summary, ops_investigate e ops_investigation_get;18 ferramentas antigas preservadas. Runtime SDK allowlist, clientes por consulta, identidade/conta/região isoladas, deadlines/paginação/calls, auditoria local opt-in sem inputs/respostas/segredos. Jobs:4aliases,2escopos paralelos por job,2jobs ativos,TTL900s.
+- Organizations: contas/OUs/pais, estados e metadados/herança observada SCP/RCP; tipos em transição e permissões negadas ficam desconhecidos. Sem IAM efetivo, emails ou conteúdo de políticas.
+- Custos: janelas explícitas, SERVICE, Decimal/moedas, estimated, filtro default de conta autenticada; payer view explícita, usage_region separado. Sem soma entre escopos, forecast ou economia inventada. Cobrança por consultas Cost Explorer declarada.
+- Documentação: desenho aprovado, plano direto (writing-plans indisponível), docs/platform.md e IAM opcional não aplicado. Cache de queries não ativado; snapshots existentes preservados.
+- Verificado:210 testes offline, regressão MCP e jobs por stdio; build0.8.0 com exit0, pip check e smoke final do wheel isolado aprovados. Revisão de diff e busca de padrões de credenciais/dados de cliente nas novas fontes sem hits. Sem consulta AWS real ou mudança de infraestrutura/cliente.
+- Pendente: publicação/atualização do cliente e aceite live em escopos escolhidos. Etapas2–6 no backlog. Sem commit ou push nesta interação; uv.lock preexistente preservado.
+
+### 2026-10-13 — Continuação autônoma: rede/IAM e recursos0.10.0
+- Solicitação: prosseguir sem novas aprovações; autorização de implementação/detalhamento de módulos persistida.
+- Concluído: network_topology, dns_diagnostics, iam_policy_analyze, iam_role_assessment; runtime diferencia serviços globais de regionais, suporta paginação IAM Marker e jobs network da mesma conta em regiões distintas. Dados brutos de policies/TXT/VPN secrets omitidos.
+- Concluído: compute_assessment (IMDS/IP público/EBS, métricas CPU/rede opcionais), database_assessment (RDS/Aurora/DynamoDB/ElastiCache), s3_assessment (owner/região e defaults seguros), backup_assessment (recovery points same-account/região e idade). Sem guest commands, objetos/SQL/secrets/restore ou avaliação IAM efetiva.
+- Resultado:30 ferramentas locais,18 originais preservadas; métodos SDK allowlist/documentação/permissões de exemplo atualizados. IAM não aplicado. Query cache permanece off; evidence snapshots TTL900s.
+- Verificação:250 testes offline aprovados em10.31s; build0.10.0 exit0, pip check e smoke do wheel isolado por MCP stdio aprovados. Regressão inclui fases anteriores, inputs/negados/paginação/segredos/contas/regiões.
+- Limites: primeiras fatias de etapas2/3, não cobertura completa das28seções. Lacunas detalhadas em docs/network-iam.md e docs/resource-assessments.md. Etapas4–6 permanecem no backlog.
+- Não executado: AWS real, mudanças em recursos, IAM, cliente instalado, commit/push. uv.lock preexistente preservado. Nenhuma nova autorização solicitada para implementar.
+
+### 2026-10-13 — Operações, IaC e aplicações0.12.0
+- Solicitação: prosseguir sem novas aprovações, mantendo plano modular.
+- Concluído: oito novas ferramentas semânticas (findings GuardDuty/SecurityHub, snapshot alarm/timeline CloudTrail, plan JSON local, CloudFormation, ECS, Lambda/SQS, Glue e KB Bedrock/endpoint SageMaker).38tools;18originais preservadas.
+- Segurança: SDK allowlist somente consultas; sem Invoke/ReceiveMessage/Send/DeleteMessage/StartJob/inference/DetectStackDrift. Payloads/identidades de eventos/env/secrets/scripts/prompts/outputs omitidos. SQS endpoint/conta/região validados; findings fora do escopo rejeitados. Unknown masks Terraform não viram valores conhecidos.
+- Diagnóstico: sem prova de root cause por coincidência temporal; cloudtrail parse falho usa classificação null e partial. Estado/metadata não comprova aplicação, segurança limpa, drift live ou economia.
+- Documentação: operations-expansion.md, plano de execução e catálogo versionado capability-coverage.json com lacunas; exemplos IAM apenas preparados, não aplicados.
+- Verificado:279 testes offline em11.26s, build0.12.0 exit0, pip check e smoke do wheel isolado por MCP stdio com38tools aprovados. Regressão preservou ferramentas anteriores.
+- Não executado: AWS real, mudanças em infraestrutura/IAM, atualização do cliente instalado, commit/push. uv.lock preexistente preservado. Cobertura integral das28seções permanece pendente, discriminada no catálogo; não alegar todas as fases totalmente concluídas.
+- Gate adicional: revisão identificou Gte de GuardDuty como integer no modelo SDK; contrato/teste ajustados, novo gate280 testes aprovado. Build final e pip check aprovados; wheel isolado final confirma import fora do checkout e stdio. Sem consulta AWS real.
+
+### 2026-10-13 — Publicação0.12.0 autorizada
+- Usuário confirmou “Pode fazer” após perguntar pelo push. Revisão/commit/push normal em origin/main autorizados; identidade pessoal local mantida.
+- Gates existentes:280 testes, build final exit0, pip check e smoke do wheel fora do checkout aprovados; sem mudanças funcionais posteriores.
+- Planejado: publicar expansão0.12.0 com38tools e catálogo explícito de lacunas; uv.lock preexistente fora do commit. Nenhuma atualização do cliente ou validação AWS real incluída neste envio.

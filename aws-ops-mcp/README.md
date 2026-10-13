@@ -8,9 +8,17 @@ O objetivo é transformar investigações repetitivas em ferramentas reutilizáv
 
 Veja [configuração, cobertura e limites de EKS/SSM](docs/eks.md). As receitas consultam recursos, mas SSM executa comandos na bastion e gera registros remotos; as ferramentas correspondentes declaram esse efeito.
 
-**CloudFront/ELB:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 18 ferramentas no checkout (versão 0.7.0). Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
+**CloudFront/ELB:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 38 ferramentas no checkout (versão 0.12.0). Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
 
 **Rede (0.7.0):** `network_path_inspect` avalia rotas de ida e retorno, SGs, NACLs, peering e TGW entre ENIs. `network_flow_logs` consulta registros CloudWatch com alvo e janela explícitos. Veja [uso e limites](docs/network.md). Sem sondas ou alterações AWS.
+
+**Organizations e custos (0.8.0):** árvore de contas/OUs, herança observada de SCP/RCP e custos por serviço/período, com jobs de até quatro contas. Veja [uso, permissões, auditoria e limites](docs/platform.md). Cost Explorer tem cobrança por consulta; resultados não comprovam autorização IAM efetiva nem economia.
+
+**Rede/IAM (0.9.0):** topologia regional, registros Route53 e análise estática de políticas/roles, com lacunas explícitas de conectividade e autorização efetiva. Veja [uso e limites](docs/network-iam.md).
+
+**Recursos direcionados (0.10.0):** EC2/EBS com métricas opcionais, configuração de bancos, S3 e recovery points AWS Backup. Veja [uso, cobertura e limites](docs/resource-assessments.md). Nenhum comando guest, objeto S3, segredo ou SQL é coletado.
+
+**Operações e aplicações (0.12.0):** findings de segurança, alarmes/CloudTrail, plan Terraform local, CloudFormation/ECS e avaliações iniciais Lambda/SQS, Glue e Bedrock/SageMaker. Veja [contratos, evidências e lacunas](docs/operations-expansion.md). Sem execução de workloads ou inferência; não afirma causa raiz nem saúde funcional por metadados.
 
 ## Uso simples: fornecer credenciais e pedir a análise
 

@@ -16,7 +16,7 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                 tools = (await session.list_tools()).tools
                 assert {tool.name for tool in tools} == {"capabilities", "ec2_inventory", "ec2_health", "evidence_get",
                     "eks_inventory", "eks_investigate", "eks_investigation_get", "eks_investigation_cancel", "eks_logs",
-                    "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs"}
+                    "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs", "organization_summary", "cost_summary", "ops_investigate", "ops_investigation_get", "network_topology", "dns_diagnostics", "iam_policy_analyze", "iam_role_assessment", "compute_assessment", "database_assessment", "s3_assessment", "backup_assessment", "security_findings_summary", "incident_diagnostics", "terraform_plan_analysis", "cloudformation_health", "ecs_service_assessment", "serverless_assessment", "analytics_assessment", "ai_resource_assessment"}
                 for name in ("cloudfront_grpc_inspect", "elbv2_inspect"):
                     assert next(t for t in tools if t.name == name).annotations.readOnlyHint is True
                     absent = await session.call_tool(name, {"account": "test", "region": "us-east-1"})
@@ -40,6 +40,53 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                     assert next(t for t in tools if t.name==name).annotations.readOnlyHint is True
                     response=await session.call_tool(name,arguments)
                     assert json.loads(response.content[0].text)["errors"][0]["code"]=="configuration_invalid"
+                for name, arguments in (
+                    ("organization_summary", {"account":"test", "region":"us-east-1"}),
+                    ("cost_summary", {"account":"test", "region":"us-east-1", "start_date":"2026-01-01", "end_date":"2026-02-01"})):
+                    assert next(t for t in tools if t.name==name).annotations.readOnlyHint is True
+                    response=await session.call_tool(name,arguments)
+                    assert json.loads(response.content[0].text)["errors"][0]["code"]=="configuration_invalid"
+                for name, extra in (
+                    ("network_topology", {}),
+                    ("dns_diagnostics", {"hosted_zone_id":"ZDEMO","record_name":"www.example.test"}),
+                    ("iam_role_assessment", {"role_name":"demo"})):
+                    response=await session.call_tool(name,dict(account="test",region="us-east-1",**extra))
+                    assert json.loads(response.content[0].text)["errors"][0]["code"]=="configuration_invalid"
+                for name, extra in (
+                    ("compute_assessment", {"instance_ids":["i-00000001"]}),
+                    ("database_assessment", {"database_kind":"rds","resource_name":"demo"}),
+                    ("s3_assessment", {"bucket_name":"demo-bucket"}),
+                    ("backup_assessment", {"resource_arn":"arn:aws:ec2:us-east-1:000000000000:volume/vol-00000001"})):
+                    response=await session.call_tool(name,dict(account="test",region="us-east-1",**extra))
+                    assert json.loads(response.content[0].text)["errors"][0]["code"]=="configuration_invalid"
+                for name, extra in (
+                    ("security_findings_summary", {"services":["guardduty"]}),
+                    ("incident_diagnostics", {"alarm_prefix":"demo", "include_cloudtrail":False}),
+                    ("cloudformation_health", {"stack_name":"demo"}),
+                    ("ecs_service_assessment", {"cluster_name":"demo","service_name":"app"}),
+                    ("serverless_assessment", {"service_kind":"lambda","resource_name":"demo"}),
+                    ("analytics_assessment", {"resource_name":"demo"}),
+                    ("ai_resource_assessment", {"resource_kind":"knowledge_base","resource_name":"0123456789"})):
+                    response=await session.call_tool(name,dict(account="test",region="us-east-1",**extra))
+                    assert json.loads(response.content[0].text)["errors"][0]["code"]=="configuration_invalid"
+                plan_result=await session.call_tool("terraform_plan_analysis", {"plan_json":json.dumps({"format_version":"1.2","resource_changes":[]})})
+                assert json.loads(plan_result.content[0].text)["summary"]["apply_executed"] is False
+                local_policy=await session.call_tool("iam_policy_analyze", {"policy_json":json.dumps({"Statement":{"Effect":"Allow","Action":"*","Resource":"*"}})})
+                assert json.loads(local_policy.content[0].text)["summary"]["effective_authorization_verified"] is False
+                missing_ops=await session.call_tool("ops_investigation_get", {"investigation_id":"missing"})
+                assert json.loads(missing_ops.content[0].text)["status"]=="error"
+                bad_scope=await session.call_tool("ops_investigate", {"scopes":[], "analysis":"organization"})
+                assert bad_scope.isError
+                assert next(t for t in tools if t.name=='ops_investigate').annotations.readOnlyHint is True
+                started=await session.call_tool('ops_investigate', {'scopes':[{'account':'test','region':'us-east-1'}], 'analysis':'organization'})
+                job_id=json.loads(started.content[0].text)['investigation_id']
+                for _ in range(50):
+                    polled=await session.call_tool('ops_investigation_get', {'investigation_id':job_id})
+                    progress=json.loads(polled.content[0].text)
+                    if progress['summary']['state']=='finished':break
+                    await asyncio.sleep(.01)
+                assert progress['summary']['state']=='finished'
+                assert progress['status']=='partial' and progress['items'][0]['errors'][0]['code']=='configuration_invalid'
                 bad_port=await session.call_tool("network_path_inspect", {"account":"test", "region":"us-east-1", "source_eni_id":"eni-00000000000000001", "destination_eni_id":"eni-00000000000000002", "port":0})
                 assert bad_port.isError
                 invalid_hours=await session.call_tool("eks_rightsizing", {"account":"test", "region":"us-east-1", "cluster":"demo", "namespace":"demo", "pod_name":"app", "hours":9999})

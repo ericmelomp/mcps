@@ -1,0 +1,130 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OrganizationInventoryRead",
+      "Effect": "Allow",
+      "Action": [
+        "organizations:DescribeOrganization",
+        "organizations:ListAccounts",
+        "organizations:ListRoots",
+        "organizations:ListOrganizationalUnitsForParent",
+        "organizations:ListChildren",
+        "organizations:ListPoliciesForTarget"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ExplicitCostExplorerQuery",
+      "Effect": "Allow",
+      "Action": [
+        "ce:GetCostAndUsage"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "NetworkTopologyRead",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeVpcs",
+        "ec2:DescribeVpcAttribute",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeRouteTables",
+        "ec2:DescribeNatGateways",
+        "ec2:DescribeInternetGateways",
+        "ec2:DescribeVpcEndpoints",
+        "ec2:DescribeVpcPeeringConnections",
+        "ec2:DescribeTransitGatewayVpcAttachments",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpnConnections",
+        "directconnect:DescribeConnections"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ExplicitRoleRead",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:ListRolePolicies",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ExplicitDnsRead",
+      "Effect": "Allow",
+      "Action": [
+        "route53:GetHostedZone",
+        "route53:ListResourceRecordSets"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ExplicitResourceAssessments",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeVolumes",
+        "cloudwatch:GetMetricData",
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBClusters",
+        "dynamodb:DescribeTable",
+        "dynamodb:DescribeContinuousBackups",
+        "elasticache:DescribeReplicationGroups",
+        "s3:GetBucketLocation",
+        "s3:GetEncryptionConfiguration",
+        "s3:GetBucketVersioning",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:GetBucketPolicyStatus",
+        "s3:GetLifecycleConfiguration",
+        "backup:ListRecoveryPointsByResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ScopedSecurityAndIncidentRead",
+      "Effect": "Allow",
+      "Action": [
+        "guardduty:ListDetectors",
+        "guardduty:GetDetector",
+        "guardduty:ListFindings",
+        "guardduty:GetFindings",
+        "securityhub:GetFindings",
+        "cloudwatch:DescribeAlarms",
+        "cloudtrail:LookupEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ExplicitDeploymentRead",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:DescribeStacks",
+        "cloudformation:ListStackResources",
+        "ecs:DescribeServices",
+        "ecs:DescribeTaskDefinition"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ExplicitApplicationMetadataRead",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetFunctionConcurrency",
+        "sqs:GetQueueUrl",
+        "sqs:GetQueueAttributes",
+        "glue:GetJob",
+        "glue:GetJobRuns",
+        "bedrock:GetKnowledgeBase",
+        "sagemaker:DescribeEndpoint",
+        "sagemaker:DescribeEndpointConfig"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
