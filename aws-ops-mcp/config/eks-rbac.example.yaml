@@ -37,6 +37,10 @@ rules:
   - apiGroups: [karpenter.k8s.aws]
     resources: [ec2nodeclasses]
     verbs: [get, list]
+  # Optional GitOps CRDs; omit if these operators are not used.
+  - apiGroups: [argoproj.io]
+    resources: [applications, rollouts]
+    verbs: [get, list]
   - apiGroups: [metrics.k8s.io]
     resources: [nodes, pods]
     verbs: [get, list]

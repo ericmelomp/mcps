@@ -251,3 +251,8 @@ Siga o [procedimento de expansão assistida](docs/extension-workflow.md). O serv
 ## WAF e rede — versão 0.4.0
 
 `waf_inspect`, `waf_logs_search` e `public_ip_lookup` cobrem regras/IP sets/logging WAFv2, correlação de Request IDs em S3/CloudWatch e associação de IPv4 a NAT/EIP. Somente leitura, com limites e cobertura explícitos. [Uso e permissões](docs/security.md). A versão fixada no cliente GitHub depende de publicação e atualização separadas.
+
+
+## EKS 0.5.0: migra??o e capacidade
+
+Perfis opcionais `nodes`, `workloads` e `migration` em `eks_investigate`; `full` continua padr?o. Resumos de placement/capacidade, requests efetivos, contexto de alerts e status opcionais ArgoCD/Rollouts. [Contratos, cobertura e limita??es](docs/eks-evolution.md).

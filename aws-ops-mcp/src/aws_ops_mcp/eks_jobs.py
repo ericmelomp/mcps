@@ -10,7 +10,8 @@ from datetime import datetime, timezone
 from .config import ConfigurationError, resolve
 from .contracts import bounded, encoded, envelope
 from .eks_cli import CLI, CollectionError
-from .eks_collect import Collector, pick
+from .eks_collect import Collector, PROFILES, pick
+from .eks_insights import restart_snapshot, restart_delta
 
 
 EXCLUSIONS = ["application functional tests", "active network probes", "effective IAM authorization evaluation",
@@ -21,6 +22,7 @@ class Investigations:
     def __init__(self, store, cli_factory=CLI, collector_factory=Collector, clock=time.monotonic):
         self.store, self.cli_factory, self.collector_factory, self.clock = store, cli_factory, collector_factory, clock
         self.jobs, self.lock = OrderedDict(), threading.RLock()
+        self.restart_baselines = OrderedDict()
 
     def _expire(self):
         now = self.clock()
@@ -29,8 +31,12 @@ class Investigations:
             if job["finished"] is not None and now - job["finished"] > 900:
                 del self.jobs[key]
 
-    def start(self, account, region, clusters=None, log_target=None, inventory=False):
+    def start(self, account, region, clusters=None, log_target=None, inventory=False, profile="full"):
         result = envelope(account, region)
+        if profile not in {"full", *PROFILES}:
+            result.update(status="error", errors=[{"code": "profile_invalid"}])
+            result["coverage"]["complete"] = False
+            return result
         try:
             config = resolve(account, region)
         except ConfigurationError:
@@ -50,7 +56,7 @@ class Investigations:
             job = {"id": key, "account": account, "region": region, "clusters": clusters or [],
                    "state": "running", "stop": threading.Event(), "finished": None,
                    "components": {}, "items": [], "findings": [], "errors": [], "remote": {},
-                   "bytes": 0, "evidence_id": None, "local_identity": None, "started": self.clock()}
+                   "bytes": 0, "evidence_id": None, "local_identity": None, "started": self.clock(), "profile": profile}
             job["collected_at"] = datetime.now(timezone.utc).isoformat()
             self.jobs[key] = job
             threading.Thread(target=self._run, args=(job, config, log_target, inventory), daemon=True).start()
@@ -115,9 +121,11 @@ class Investigations:
                 for cluster in job["clusters"]:
                     cli.check()
                     collector = self.collector_factory(cli, job["account"], cluster, emit)
+                    collector.profile = job["profile"]
                     try:
-                        if log_target:
+                        if log_target or job["profile"] != "full":
                             collector.cluster_data = cli.call("eks", "describe-cluster", {"name": cluster})["cluster"]
+                            collector.record("aws.cluster", [{"kind": "cluster", "data": pick(collector.cluster_data, "name arn status version resourcesVpcConfig")}])
                         else:
                             collector.aws()
                         collector.kubernetes(log_target)
@@ -138,6 +146,22 @@ class Investigations:
                 job["state"] = "cancelled" if job["stop"].is_set() else "finished"
                 job["finished"] = self.clock()
                 job["items"].extend({"kind": "ssm_command", **event} for event in job["remote"].values())
+                for cluster in job['clusters']:
+                    coverage_key = cluster + '/kubernetes.pods'
+                    if job['components'].get(coverage_key, {}).get('complete') and not job['components'][coverage_key].get('output_truncated') and not job['errors']:
+                        key = (job['account'], job['region'], cluster)
+                        snapshot = restart_snapshot([i for i in job['items'] if i.get('cluster') == cluster])
+                        previous = self.restart_baselines.get(key)
+                        if previous and self.clock()-previous[0] < 900:
+                            delta = restart_delta(snapshot, previous[1])
+                            for i in job['items']:
+                                if i.get('kind') == 'migration_summary' and i.get('cluster') == cluster:
+                                    i['restart_delta'] = delta
+                                    i['restart_interpretation'] = 'compared_same_uid_with_previous_complete_snapshot'
+                        self.restart_baselines[key] = (self.clock(), snapshot)
+                        self.restart_baselines.move_to_end(key)
+                        while len(self.restart_baselines) > 20:
+                            self.restart_baselines.popitem(last=False)
                 coverage = self._coverage(job)
                 job["evidence_id"] = self.store.put(job["account"], job["region"], job["items"], coverage)
                 if not job["evidence_id"]:
@@ -172,6 +196,14 @@ class Investigations:
                                  "finding_count_retained": len(job["findings"]),
                                  "finding_count_reported": sum(c.get("finding_count", 0) for c in job["components"].values()),
                                  "next": "Poll eks_investigation_get; evidence available on completion" if job["finished"] is None else "Read evidence_get for details"}
+            result["summary"]["profile"] = job.get("profile", "full")
+            result["summary"]["provisional"] = job["finished"] is None
+            result["summary"]["migration"] = [{k: copy.deepcopy(i[k]) for k in
+                ("cluster", "complete", "placement", "placement_truncated", "remaining_count", "unscheduled_pods", "withdrawal_assessment", "restart_interpretation", "restart_delta") if k in i}
+                for i in job["items"] if i.get("kind") == "migration_summary"]
+            for summary in result["summary"]["migration"]:
+                summary["placement_truncated"] = summary.get("placement_truncated", False) or len(summary.get("placement", [])) > 3
+                summary["placement"] = summary.get("placement", [])[:3]
             result["errors"] = copy.deepcopy(job["errors"][:20])
             result["findings"] = sorted(copy.deepcopy(job["findings"]), key=lambda f: {"error": 0, "warning": 1}.get(f.get("severity"), 2))
             result["items"] = [{"component": name, **coverage} for name, coverage in job["components"].items() if not coverage["complete"]][:20]

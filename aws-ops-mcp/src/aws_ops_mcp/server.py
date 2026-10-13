@@ -1,7 +1,7 @@
 """Local stdio MCP endpoint. Importing this module performs no AWS calls."""
 
 import logging
-from typing import Annotated
+from typing import Annotated, Literal
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
@@ -44,7 +44,8 @@ def capabilities() -> str:
                      "eks": ["aws_cli_inventory", "cluster_nodegroup_addon_fargate_states", "vpc_configuration",
                              "related_iam_policy_inventory", "ssm_bastion_kubernetes", "workload_readiness",
                              "warning_events", "storage_dependencies", "service_endpoints", "karpenter_v1_conditions",
-                             "metrics_api_snapshots", "related_elbv2_target_health", "explicit_bounded_pod_logs"]},
+                             "metrics_api_snapshots", "related_elbv2_target_health", "explicit_bounded_pod_logs", "migration_placement", "requests_and_usage", "argocd_applications", "argo_rollouts", "collection_profiles"]},
+        "eks_profiles": ["full", "nodes", "workloads", "migration"],
         "eks_requirements": "AWS CLI locally; Linux SSM bastion with python3, aws, kubectl; AWS_OPS_EKS_CONFIG mapping; IAM/RBAC access",
         "edge_requirements": "AWS CLI locally; configured account and allowed region; CloudFront/ELB read permissions",
         "edge_limits": "60 seconds, 100 pages per API, 2000 evidence records. Configuration evidence only; no DNS/TLS/RPC probes or WAF evaluation.",
@@ -111,14 +112,15 @@ def eks_inventory(account: Alias, region: Region) -> str:
 
 @mcp.tool(structured_output=False, annotations=remote_annotations)
 def eks_investigate(account: Alias, region: Region,
-                    clusters: Annotated[list[Cluster], Field(min_length=1, max_length=5)]) -> str:
+                    clusters: Annotated[list[Cluster], Field(min_length=1, max_length=5)],
+                    profile: Literal["full", "nodes", "workloads", "migration"] = "full") -> str:
     """Start AWS and internal Kubernetes diagnostics via configured SSM bastions, without modifying cluster resources.
 
     Executes fixed commands on Linux bastions, creates isolated temporary kubeconfigs, and generates SSM records.
     No arbitrary shell, pod exec, dependency installation or remediation. Poll eks_investigation_get.
     """
     from .contracts import encoded
-    return encoded(investigations.start(account, region, list(dict.fromkeys(clusters)))).decode()
+    return encoded(investigations.start(account, region, list(dict.fromkeys(clusters)), profile=profile)).decode()
 
 
 @mcp.tool(structured_output=False, annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False, openWorldHint=False))

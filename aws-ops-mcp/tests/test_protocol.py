@@ -29,6 +29,11 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                     response = await session.call_tool(name, dict(account="test", region="us-east-1", **extra))
                     assert json.loads(response.content[0].text)["errors"][0]["code"] == "configuration_invalid"
                 assert next(t for t in tools if t.name == "eks_investigate").annotations.readOnlyHint is False
+                schema = next(t for t in tools if t.name == "eks_investigate").inputSchema
+                assert schema["properties"]["profile"]["default"] == "full"
+                assert set(schema["properties"]["profile"]["enum"]) == {"full", "nodes", "workloads", "migration"}
+                invalid_profile = await session.call_tool("eks_investigate", {"account":"test", "region":"us-east-1", "clusters":["demo"], "profile":"shell"})
+                assert invalid_profile.isError
                 eks = await session.call_tool("eks_investigate", {"account": "test", "region": "us-east-1", "clusters": ["demo"]})
                 assert json.loads(eks.content[0].text)["errors"][0]["code"] == "configuration_invalid"
                 invalid_eks = await session.call_tool("eks_investigate", {"account": "test", "region": "us-east-1", "clusters": ["demo; touch /tmp/unsafe"]})

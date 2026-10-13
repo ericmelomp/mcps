@@ -1,7 +1,8 @@
 """AWS resource discovery and Kubernetes orchestration for one explicit cluster."""
 
 from .eks_cli import CollectionError
-from .eks_kubernetes import COMPONENTS, OPTIONAL, PATHS, correlate
+from .eks_kubernetes import COMPONENTS, OPTIONAL, PATHS, OPTIONAL_CRDS, correlate
+from .eks_insights import summarize
 from .eks_ssm import resolve_bastion, run_recipe, validate_bastion
 
 
@@ -9,11 +10,18 @@ def pick(value, fields):
     return {key: value[key] for key in fields.split() if key in value}
 
 
+PROFILES = {
+    "nodes": ("customresourcedefinitions", "nodes", "nodepools", "nodeclaims", "ec2nodeclasses", "node_metrics"),
+    "workloads": ("customresourcedefinitions", "nodes", "pods", "deployments", "statefulsets", "daemonsets", "events", "applications", "rollouts"),
+    "migration": ("customresourcedefinitions", "nodes", "pods", "deployments", "statefulsets", "daemonsets", "events", "services", "endpointslices", "persistentvolumeclaims", "persistentvolumes", "poddisruptionbudgets", "nodepools", "nodeclaims", "ec2nodeclasses", "node_metrics", "applications", "rollouts"),
+}
+
 class Collector:
     def __init__(self, cli, account, cluster, emit):
         self.cli, self.account, self.cluster, self.emit = cli, account, cluster, emit
         self.items, self.findings, self.coverage = [], [], {}
         self.cluster_data = None
+        self.profile = "full"
 
     def record(self, component, items, findings=(), complete=True, code=None, **extra):
         items = [{"cluster": self.cluster, "component": component, **item} for item in items]
@@ -44,7 +52,7 @@ class Collector:
                 fields=None, token="nextToken", output_token=None):
         def project(rows):
             if key == "Reservations":
-                return [{"Instances": [pick(instance, "InstanceId State InstanceType PrivateIpAddress SubnetId VpcId SecurityGroups IamInstanceProfile Placement")
+                return [{"Instances": [pick(instance, "InstanceId State InstanceType PrivateIpAddress SubnetId VpcId SecurityGroups IamInstanceProfile Placement InstanceLifecycle SpotInstanceRequestId")
                                         for instance in row.get("Instances", [])]} for row in rows]
             return [pick(row, fields) if fields else row for row in rows]
         rows = []
@@ -168,7 +176,9 @@ class Collector:
             return
         base = {"cluster": self.cluster, "cluster_arn": self.cluster_data["arn"],
                 "account_id": self.cli.identity["Account"], "region": self.cli.region}
-        kinds = ["logs"] if log_target else list(PATHS)
+        kinds = ["logs"] if log_target else list(PROFILES.get(self.profile, PATHS))
+        if self.profile != "full" and not log_target:
+            self.record("profile", [], scope=self.profile, excluded_kinds=sorted(set(PATHS)-set(kinds)))
         collected, complete_kinds = [], set()
         for kind in kinds:
             component = "kubernetes." + kind
@@ -180,8 +190,7 @@ class Collector:
                           else self.remote_pages(bastion, payload))
                 code = result.get("error")
                 crd_names = {row["name"] for row in collected if row.get("kind") == "customresourcedefinitions"}
-                expected_crd = {"nodepools": "nodepools.karpenter.sh", "nodeclaims": "nodeclaims.karpenter.sh",
-                                "ec2nodeclasses": "ec2nodeclasses.karpenter.k8s.aws"}.get(kind)
+                expected_crd = OPTIONAL_CRDS.get(kind)
                 absent = (kind in OPTIONAL and code == "api_not_found" and expected_crd is not None
                           and "customresourcedefinitions" in complete_kinds and expected_crd not in crd_names)
                 complete = result["complete"] or absent
@@ -203,7 +212,9 @@ class Collector:
                 self.record("kubernetes.remaining", [], complete=False, code="remote_preflight_failed")
                 break
         if not log_target:
-            self.record("kubernetes.correlations", [], correlate(collected, complete_kinds),
+            required = {"pods", "services", "endpointslices", "persistentvolumeclaims", "nodes"}
+            if required <= set(kinds):
+                self.record("kubernetes.correlations", [], correlate(collected, complete_kinds),
                         complete={"pods", "services", "endpointslices", "persistentvolumeclaims", "nodes"} <= complete_kinds,
                         scope="service endpoints, pod PVC dependencies and node readiness; samples do not establish absence")
             discovered = []
@@ -213,9 +224,29 @@ class Collector:
                         if marker in row.get("name", ""):
                             discovered.append({"kind": "component", "component_type": component,
                                                "name": row["name"], "namespace": row["namespace"]})
-            self.record("kubernetes.components", discovered[:200], complete="pods" in complete_kinds,
-                        scope="name-based discovery; managed Auto Mode components may not appear as pods")
-            self.dependencies(collected)
+            if "pods" in kinds:
+                self.record("kubernetes.components", discovered[:200], complete="pods" in complete_kinds,
+                            scope="name-based discovery; managed Auto Mode components may not appear as pods")
+            ids = sorted({n['provider_id'].rsplit('/', 1)[-1] for n in collected
+                          if n.get('kind') == 'nodes' and (n.get('provider_id') or '').startswith('aws://')})
+            for start in range(0, len(ids), 50):
+                def capacity(start=start):
+                    reservations = self.listing('aws.node_capacity.' + str(start), 'ec2', 'describe-instances', 'Reservations',
+                        {'InstanceIds': ids[start:start+50]}, fields='Instances', token='NextToken')
+                    instances = {i['InstanceId']: i for r in reservations for i in r.get('Instances', [])}
+                    for node in collected:
+                        if node.get('kind') != 'nodes':
+                            continue
+                        instance = instances.get((node.get('provider_id') or '').rsplit('/', 1)[-1])
+                        if instance:
+                            life = instance.get('InstanceLifecycle')
+                            node['ec2_capacity_type'] = 'spot' if life == 'spot' else ('on-demand' if life is None else 'unknown')
+                self.attempt('aws.node_capacity.' + str(start), capacity)
+            self.record("kubernetes.capacity_migration", summarize(collected, complete_kinds),
+                        complete={"nodes", "pods"} <= complete_kinds if self.profile != "nodes" else "nodes" in complete_kinds,
+                        scope="Placement and instantaneous capacity; no scheduler simulation or drain authorization")
+            if self.profile == "full":
+                self.dependencies(collected)
 
     def remote_pages(self, bastion, payload):
         """Aggregate server-paginated SSM results, retrying oversized pages at the same snapshot."""
@@ -304,6 +335,13 @@ class Collector:
                         findings = [{"code": "load_balancer_target_unhealthy", "severity": "warning", "resource": group["TargetGroupArn"],
                                      "state": h.get("TargetHealth", {}).get("State")}
                                     for h in health if h.get("TargetHealth", {}).get("State") in {"unhealthy", "unavailable"}]
+                        matching = [i for i in items if i.get("kind") == "services" and any(e.get("hostname") == row.get("DNSName") for e in i.get("load_balancer", {}).get("ingress", []))]
+                        context = [{"namespace": svc.get("namespace", ""), "service": svc.get("name", ""),
+                                    "ready_endpoints": sum(e.get("ready", 0) for e in items if e.get("kind") == "endpointslices" and e.get("namespace") == svc.get("namespace") and e.get("service") == svc.get("name")),
+                                    "zero_replica_workloads_same_name": [w["name"] for w in items if w.get("kind") in {"deployments", "statefulsets", "rollouts"} and w.get("namespace") == svc.get("namespace") and w.get("name") == svc.get("name") and w.get("desired") == 0],
+                                    "endpoint_coverage_complete": self.coverage.get("kubernetes.endpointslices", {}).get("complete", False)} for svc in matching]
+                        for finding in findings:
+                            finding["service_context"] = context
                         self.record("aws.target_health." + group["TargetGroupArn"].rsplit("/", 1)[-1],
                                     [{"kind": "target_health", "data": h} for h in health], findings)
             self.attempt("aws.load_balancers", load_balancers)

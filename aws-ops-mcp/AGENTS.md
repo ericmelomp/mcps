@@ -154,3 +154,15 @@
 - Validação real: três ferramentas executadas por MCP stdio em conta autorizada. Inspeção WAF e consulta NAT/EIP concluídas; busca S3 correlacionou os dois IDs solicitados em 72 objetos/6034 registros, sem erros. Detalhes operacionais mantidos fora do repositório. CloudWatch validado por testes simulados, sem destino real disponível nesta investigação.
 - Limites: coleta somente leitura, sem Firehose/layout customizado ou expansão de grupos referenciados; ausência de resultado não comprova ausência de bloqueio nem propriedade do IP. Nenhuma permissão ou infraestrutura alterada.
 - Publicação planejada conforme autorização anterior: commit normal em origin/main e atualização do cliente fixado no GitHub. Resultado final registrado no histórico externo para manter checkout publicado limpo.
+
+### 2026-10-13 — Proposta de evolução EKS
+- Solicitação: melhorar AWS Ops e inserir novas features após discutir lacunas de análise de migração, capacidade, consultas rápidas, alertas e ArgoCD/Rollouts.
+- Concluído: instruções e estado do repo consultados; versão local0.4.0 e coleta/normalização inspecionadas; proposta escrita e revisada em docs/superpowers/specs/2026-10-13-eks-ops-evolution-design.md com escopo genérico, critérios e execução incremental.
+- Pendente: aprovação do desenho conforme brainstorming; implementação/testes/publicação não iniciados. uv.lock preexistente preservado; sem dados reais de clientes, alterações AWS, commit ou push.
+### 2026-10-13 — Evolução EKS 0.5.0 implementada
+- Solicitação: escopo aprovado; implementar, testar e subir ao GitHub.
+- Concluído: perfis full/nodes/workloads/migration; labels/regras de scheduling por allowlist; resumo de placement e remanescentes; capacidade/requests efetivos com init/sidecar/overhead e gaps; lifecycle EC2 por provider ID; contexto Service/endpoints/replicas zero nos alertas ELB; leitura opcional ArgoCD Applications/Argo Rollouts; comparação de reinícios same-UID com baseline temporário isolado por conta/região/cluster.
+- Concluído: documentação e RBAC de exemplo atualizados, plano direto (writing-plans não disponível no catálogo), versão0.5.0. Nenhum exemplo de cliente real ou credencial incluído.
+- Verificado:128 testes offline passaram, incluindo sessão MCP stdio e novos contratos; build wheel/sdist e pip check aprovados. Smoke do wheel isolado em execução antes da publicação.
+- Publicação autorizada: origin/main, GitHub ericmelomp/mcps, commit convencional após revisão. uv.lock preexistente excluído do commit. Nenhuma infraestrutura/IAM/RBAC/configuração do cliente alterada; validação real das novas features não executada.
+- Smoke isolado concluído: wheel0.5.0 fora do checkout validou MCP stdio,14 ferramentas, schema dos perfis, rejeição de input inválido e chamadas sem configuração. Nenhuma AWS real acessada no smoke.
