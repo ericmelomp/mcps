@@ -8,7 +8,7 @@ O objetivo é transformar investigações repetitivas em ferramentas reutilizáv
 
 Veja [configuração, cobertura e limites de EKS/SSM](docs/eks.md). As receitas consultam recursos, mas SSM executa comandos na bastion e gera registros remotos; as ferramentas correspondentes declaram esse efeito.
 
-**CloudFront/ELB:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 40 ferramentas no checkout (versão 0.13.0). Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
+**CloudFront/ELB:** `cloudfront_grpc_inspect` e `elbv2_inspect` consultam configuração gRPC, behaviors, origens, listeners e targets. São 42 ferramentas no checkout (versão 0.14.0). Veja [uso, permissões e limites de CloudFront/ELB](docs/edge.md). Não executam chamadas RPC nem comprovam saúde funcional. O cliente publicado continua dependendo de atualização separada.
 
 **Rede (0.7.0):** `network_path_inspect` avalia rotas de ida e retorno, SGs, NACLs, peering e TGW entre ENIs. `network_flow_logs` consulta registros CloudWatch com alvo e janela explícitos. Veja [uso e limites](docs/network.md). Sem sondas ou alterações AWS.
 
@@ -273,3 +273,5 @@ Perfis opcionais `nodes`, `workloads` e `migration` em `eks_investigate`; `full`
 Prontid?o conservadora para retirada de nodes, riscos Spot e compara??o de snapshots de sa?de. Novas ferramentas `eks_network_dependency` (SGs de Redis/OpenSearch) e `eks_rightsizing` (at?14 dias de m?tricas ContainerInsights). [Interfaces, permiss?es e limita??es](docs/eks-operations.md).
 
 **Auto Scaling/Compute Optimizer (0.13.0):** limites e capacidade ponderada, Spot/on-demand observado nas EC2, falhas recentes e recomendações EC2 com idade/memória/compatibilidade. [Contratos e limites](docs/autoscaling-optimizer.md). Sem resize ou prova de economia.
+
+**KMS/ECR (0.14.0):** estado/origem/rotação aplicável de chave KMS e scan existente de imagem ECR por digest, com severidade/idade. [Contratos e limites](docs/kms-ecr.md). Sem operações criptográficas, novos scans ou prova de compliance/imagem segura.

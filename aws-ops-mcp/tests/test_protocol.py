@@ -16,7 +16,7 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                 tools = (await session.list_tools()).tools
                 assert {tool.name for tool in tools} == {"capabilities", "ec2_inventory", "ec2_health", "evidence_get",
                     "eks_inventory", "eks_investigate", "eks_investigation_get", "eks_investigation_cancel", "eks_logs",
-                    "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs", "organization_summary", "cost_summary", "ops_investigate", "ops_investigation_get", "network_topology", "dns_diagnostics", "iam_policy_analyze", "iam_role_assessment", "compute_assessment", "database_assessment", "s3_assessment", "backup_assessment", "security_findings_summary", "incident_diagnostics", "terraform_plan_analysis", "cloudformation_health", "ecs_service_assessment", "serverless_assessment", "analytics_assessment", "ai_resource_assessment", "autoscaling_assessment", "compute_optimizer_assessment"}
+                    "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs", "organization_summary", "cost_summary", "ops_investigate", "ops_investigation_get", "network_topology", "dns_diagnostics", "iam_policy_analyze", "iam_role_assessment", "compute_assessment", "database_assessment", "s3_assessment", "backup_assessment", "security_findings_summary", "incident_diagnostics", "terraform_plan_analysis", "cloudformation_health", "ecs_service_assessment", "serverless_assessment", "analytics_assessment", "ai_resource_assessment", "autoscaling_assessment", "compute_optimizer_assessment", "kms_key_assessment", "ecr_image_assessment"}
                 for name in ("cloudfront_grpc_inspect", "elbv2_inspect"):
                     assert next(t for t in tools if t.name == name).annotations.readOnlyHint is True
                     absent = await session.call_tool(name, {"account": "test", "region": "us-east-1"})
@@ -53,6 +53,8 @@ def test_real_stdio_discovery_validation_and_safe_calls():
                     response=await session.call_tool(name,dict(account="test",region="us-east-1",**extra))
                     assert json.loads(response.content[0].text)["errors"][0]["code"]=="configuration_invalid"
                 for name, extra in (
+                    ("kms_key_assessment", {"key_arn":"arn:aws:kms:us-east-1:000000000000:key/00000000-0000-0000-0000-000000000000"}),
+                    ("ecr_image_assessment", {"repository_name":"demo", "image_digest":"sha256:"+"0"*64}),
                     ("compute_optimizer_assessment", {"instance_ids":["i-00000001"]}),
                     ("autoscaling_assessment", {"group_name":"demo"}),
                     ("compute_assessment", {"instance_ids":["i-00000001"]}),

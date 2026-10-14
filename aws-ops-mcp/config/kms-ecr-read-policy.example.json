@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "KMSMetadata",
+      "Effect": "Allow",
+      "Action": ["kms:DescribeKey", "kms:GetKeyRotationStatus"],
+      "Resource": "arn:aws:kms:us-east-1:000000000000:key/*"
+    },
+    {
+      "Sid": "ECRExistingScan",
+      "Effect": "Allow",
+      "Action": ["ecr:DescribeRepositories", "ecr:DescribeImageScanFindings"],
+      "Resource": "arn:aws:ecr:us-east-1:000000000000:repository/demo"
+    }
+  ]
+}

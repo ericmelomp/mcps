@@ -12,6 +12,8 @@ from .config import resolve, ConfigurationError
 from .eks_cli import CollectionError
 
 OPERATIONS = {
+    'kms': {'describe_key', 'get_key_rotation_status'},
+    'ecr': {'describe_repositories', 'describe_image_scan_findings'},
     'compute-optimizer': {'get_ec2_instance_recommendations'},
     'autoscaling': {'describe_auto_scaling_groups', 'describe_scaling_activities'},
     'organizations': {'describe_organization', 'list_accounts', 'list_roots',

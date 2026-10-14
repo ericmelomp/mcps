@@ -49,9 +49,11 @@ def capabilities() -> str:
     result = envelope()
     result["summary"] = {
         "tools": ["capabilities", "ec2_inventory", "ec2_health", "evidence_get", "eks_inventory", "eks_investigate",
-                  "eks_investigation_get", "eks_investigation_cancel", "eks_logs", "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs", "organization_summary", "cost_summary", "ops_investigate", "ops_investigation_get", "network_topology", "dns_diagnostics", "iam_policy_analyze", "iam_role_assessment", "compute_assessment", "database_assessment", "s3_assessment", "backup_assessment", "security_findings_summary", "incident_diagnostics", "terraform_plan_analysis", "cloudformation_health", "ecs_service_assessment", "serverless_assessment", "analytics_assessment", "ai_resource_assessment", "autoscaling_assessment", "compute_optimizer_assessment"],
+                  "eks_investigation_get", "eks_investigation_cancel", "eks_logs", "cloudfront_grpc_inspect", "elbv2_inspect", "waf_inspect", "waf_logs_search", "public_ip_lookup", "eks_network_dependency", "eks_rightsizing", "network_path_inspect", "network_flow_logs", "organization_summary", "cost_summary", "ops_investigate", "ops_investigation_get", "network_topology", "dns_diagnostics", "iam_policy_analyze", "iam_role_assessment", "compute_assessment", "database_assessment", "s3_assessment", "backup_assessment", "security_findings_summary", "incident_diagnostics", "terraform_plan_analysis", "cloudformation_health", "ecs_service_assessment", "serverless_assessment", "analytics_assessment", "ai_resource_assessment", "autoscaling_assessment", "compute_optimizer_assessment", "kms_key_assessment", "ecr_image_assessment"],
         "security_limits": "45s collection deadline plus bounded in-flight API time; 24h log window, 100 pages/API, 1000 objects/items, 32 MiB compressed, 16 MiB expanded/object, 100000 records. Partial results require narrower queries. No historical completeness guarantee.",
-        "services": {"autoscaling": ["targeted_weighted_capacity", "actual_ec2_lifecycle", "recent_activity_sample"],
+        "services": {"kms": ["key_state_origin_and_observed_rotation"],
+                     "ecr": ["targeted_existing_scan_severity_and_freshness"],
+                     "autoscaling": ["targeted_weighted_capacity", "actual_ec2_lifecycle", "recent_activity_sample"],
                      "compute_optimizer": ["targeted_ec2_recommendations", "freshness_and_compatibility"],
                      "organizations": ["accounts_and_ou_tree", "observed_scp_rcp_attachments_and_inheritance"],
                      "cost_explorer": ["service_costs_explicit_period", "decimal_currency_totals", "explicit_billing_scope"],
@@ -589,6 +591,35 @@ def compute_optimizer_assessment(account: Alias, region: Region,
     from .contracts import encoded
     return encoded(platform.query(account, region, 'optimizer', instance_ids=instance_ids,
         maximum_age_hours=maximum_age_hours)).decode()
+
+
+@mcp.tool(structured_output=False, annotations=annotations)
+def kms_key_assessment(account: Alias, region: Region,
+    key_arn: Annotated[str, Field(min_length=20, max_length=200)]) -> str:
+    """Inspect one same-account KMS key ARN: state, origin, usage and applicable automatic rotation.
+
+    No aliases, cross-account reads, key material, decrypt, grants or effective policy evaluation.
+    Rotation queries target customer-managed symmetric AWS_KMS keys outside custom stores.
+    Missing permissions are partial evidence, not a healthy or compliant key.
+    """
+    from .contracts import encoded
+    return encoded(platform.query(account, region, 'kms', key_arn=key_arn)).decode()
+
+
+@mcp.tool(structured_output=False, annotations=annotations)
+def ecr_image_assessment(account: Alias, region: Region,
+    repository_name: Annotated[str, Field(min_length=1, max_length=256)],
+    image_digest: Annotated[str, Field(pattern=r'^sha256:[a-f0-9]{64}$')],
+    maximum_age_hours: Annotated[int, Field(ge=1, le=8760)] = 168) -> str:
+    """Inspect a private ECR repository and aggregate existing scan for one explicit sha256 digest.
+
+    Reports scan state, severity counts and age. Reads one finding detail page; details are omitted,
+    counts use AWS aggregate rather than that sample. No StartImageScan, pulls or Inspector enablement.
+    No scan, missing timestamps or access errors never prove absence of vulnerabilities.
+    """
+    from .contracts import encoded
+    return encoded(platform.query(account, region, 'ecr', repository_name=repository_name,
+        image_digest=image_digest, maximum_age_hours=maximum_age_hours)).decode()
 
 
 def main():

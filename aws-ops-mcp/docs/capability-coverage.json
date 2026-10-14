@@ -1,7 +1,7 @@
 {
-  "version": "0.13.0",
+  "version": "0.14.0",
   "reviewed_on": "2026-10-13",
-  "tool_count": 40,
+  "tool_count": 42,
   "baseline_tools_preserved": 18,
   "validation": "offline_and_isolated_mcp_stdio",
   "live_aws_validation": false,
@@ -46,13 +46,14 @@
         "waf",
         "static_iam_role_policy_signals",
         "guardduty_securityhub_findings",
-        "cloudtrail_management_timeline"
+        "cloudtrail_management_timeline",
+        "targeted_kms_state_origin_applicable_rotation"
       ],
       "missing": [
         "effective_iam",
-        "kms_assessment",
         "config_inspector_macie",
-        "organization_security_posture"
+        "organization_security_posture",
+        "kms_effective_policies_grants_and_material_lifecycle"
       ]
     },
     {
@@ -105,13 +106,14 @@
       "status": "partial",
       "implemented": [
         "eks_investigation_migration_spot_requests_metrics_history",
-        "ecs_service_task_metadata"
+        "ecs_service_task_metadata",
+        "targeted_ecr_existing_scan_aggregates_and_age"
       ],
       "missing": [
         "full_cluster_security",
-        "ecr_scanning",
         "pod_cost_allocation",
-        "application_acceptance"
+        "application_acceptance",
+        "ecr_scan_details_signatures_sbom_workload_mapping"
       ]
     },
     {
@@ -211,5 +213,5 @@
       ]
     }
   ],
-  "tests_passed": 315
+  "tests_passed": 351
 }

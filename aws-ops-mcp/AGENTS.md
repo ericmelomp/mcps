@@ -254,3 +254,11 @@
 - Verificado:315 testes offline aprovados, build exit0, pip check e smoke do wheel isolado via stdio com40 ferramentas. Inputs/SDK parameters, scopes, dados ausentes, segredos e metodos mutaveis cobertos.
 - Limites: sem consultas AWS reais, IAM aplicado, resize, aceite funcional ou economia comprovada. ASG policies/warm pools e demais dominios continuam no catalogo. uv.lock preexistente preservado.
 - Planejado autorizado: commit feat(aws-ops-mcp): assess autoscaling and EC2 sizing recommendations; push normal origin/main. Resultado da publicacao externo ao checkout.
+
+### 2026-10-13 - Continuacao seguranca KMS/ECR 0.14.0
+- Solicitacao: prosseguir com features pendentes; implementacao/testes/publicacao autorizados anteriormente.
+- Concluido: kms_key_assessment e ecr_image_assessment; 42 ferramentas, 40 anteriores preservadas. KMS metadata e rotacao aplicavel; ECR scan existente por digest com agregado de severidade e idade. Sem crypto calls, policies brutas, novos scans, pulls ou mutacoes.
+- Verificado inicialmente:37 testes direcionados/protocolo aprovados; build e pip check aprovados. Regressao completa inicial:350 passaram, teste antigo de deadline falhou por evidencia ausente; isolado novamente:2 testes runner aprovados sem mudanca de codigo.
+- Planejado: confirmar regressao completa e smoke isolado; publicar feat(aws-ops-mcp): assess KMS keys and existing ECR image scans em origin/main. Resultado de publicacao externo ao checkout.
+- Limites: sem consultas AWS reais, IAM aplicado, compliance ou ausencia de vulnerabilidades comprovadas. Demais lacunas no catalogo; uv.lock preexistente preservado.
+- Gate final: segunda regressao completa351 testes aprovados em41.56s, sem alterar worker/teste antigo; build0.14.0/pip check e wheel isolado com42tools aprovados. Autorizado publicar normalmente em origin/main.
